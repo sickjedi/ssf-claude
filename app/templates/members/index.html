@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Members - SSF{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Members</h2>
+    {% if current_user.can_write %}
+    <a href="{{ url_for('members.add') }}" class="btn btn-primary">Add Member</a>
+    {% endif %}
+</div>
+
+{% if members %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Name</th>
+                <th>OIB</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for member in members %}
+            <tr>
+                <td>{{ member.full_name }}</td>
+                <td>{{ member.oib }}</td>
+                <td>{{ member.email_address }}</td>
+                <td>{{ member.phone }}</td>
+                <td>
+                    {% if member.is_active %}
+                    <span class="badge bg-success">Active</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Inactive</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('members.view', member_id=member.id) }}" class="btn btn-sm btn-outline-secondary">View</a>
+                    {% if current_user.can_write %}
+                    <a href="{{ url_for('members.edit', member_id=member.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                    {% endif %}
+                    {% if current_user.can_delete %}
+                    <form method="POST" action="{{ url_for('members.delete', member_id=member.id) }}" class="d-inline"
+                          onsubmit="return confirm('Delete {{ member.full_name }}?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted">No members yet.</p>
+{% endif %}
+{% endblock %}

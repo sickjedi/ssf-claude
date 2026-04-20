@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}{{ member.full_name }} - SSF{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>{{ member.full_name }}</h2>
+            <div class="d-flex gap-2">
+                {% if current_user.can_write %}
+                <a href="{{ url_for('members.edit', member_id=member.id) }}" class="btn btn-primary">Edit</a>
+                {% endif %}
+                {% if current_user.can_delete %}
+                <form method="POST" action="{{ url_for('members.delete', member_id=member.id) }}"
+                      onsubmit="return confirm('Delete {{ member.full_name }}?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-danger">Delete</button>
+                </form>
+                {% endif %}
+                <a href="{{ url_for('members.index') }}" class="btn btn-outline-secondary">Back</a>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">OIB</dt>
+                    <dd class="col-sm-8">{{ member.oib }}</dd>
+
+                    <dt class="col-sm-4">Date of Birth</dt>
+                    <dd class="col-sm-8">{{ member.date_of_birth.strftime('%d.%m.%Y') }}</dd>
+
+                    <dt class="col-sm-4">Address</dt>
+                    <dd class="col-sm-8">{{ member.address }}</dd>
+
+                    <dt class="col-sm-4">Phone</dt>
+                    <dd class="col-sm-8">{{ member.phone }}</dd>
+
+                    <dt class="col-sm-4">Email</dt>
+                    <dd class="col-sm-8">{{ member.email_address }}</dd>
+
+                    <dt class="col-sm-4">GDPR Consent</dt>
+                    <dd class="col-sm-8">{{ 'Yes' if member.gdpr else 'No' }}</dd>
+
+                    <dt class="col-sm-4">Status</dt>
+                    <dd class="col-sm-8">
+                        {% if member.is_active %}
+                        <span class="badge bg-success">Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </dd>
+
+                    {% if member.end_date %}
+                    <dt class="col-sm-4">End Date</dt>
+                    <dd class="col-sm-8">{{ member.end_date.strftime('%d.%m.%Y') }}</dd>
+                    {% endif %}
+
+                    {% if member.end_reason %}
+                    <dt class="col-sm-4">End Reason</dt>
+                    <dd class="col-sm-8">{{ member.end_reason }}</dd>
+                    {% endif %}
+
+                    <dt class="col-sm-4">Member Since</dt>
+                    <dd class="col-sm-8">{{ member.created_at.strftime('%d.%m.%Y') }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

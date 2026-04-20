@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash *)",
+      "PowerShell(Write-Host \"Starting directory listing\"; $items = Get-ChildItem -Path 'C:\\\\Work\\\\Projects\\\\SSF'; Write-Host \"Found $\\($items.Count\\) items\"; $items | Format-List Name)",
+      "PowerShell(Get-ChildItem -Path 'C:\\\\Work\\\\Projects\\\\SSF' -Force -Recurse -Depth 2 | Where-Object {$_.PSIsContainer -eq $false} | Select-Object -First 50 -ExpandProperty FullName)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(@\\(Get-ChildItem -Path 'C:\\\\Work\\\\Projects\\\\SSF' -Force -Exclude '.venv' -File\\) | ForEach-Object { $_.Name })",
+      "PowerShell($items = Get-ChildItem -Path 'C:\\\\Work\\\\Projects\\\\SSF' -Force -Exclude '.venv'; foreach \\($item in $items\\) { if \\(-not $item.PSIsContainer\\) { Write-Host \"FILE: $\\($item.Name\\) \\(Size: $\\($item.Length\\) bytes\\)\" } })",
+      "PowerShell(Get-Item *)",
+      "PowerShell(Get-ChildItem -Path 'C:\\\\Work\\\\Projects\\\\SSF' -Force -Exclude '.venv', '.idea' -Recurse -File | Where-Object { $_.Name -match '\\(requirements|setup|pyproject|pipfile|tox|Makefile|docker\\)' } | Select-Object -ExpandProperty FullName)",
+      "PowerShell(Get-ChildItem -Path 'C:\\\\Work' -Force | Select-Object Name, @{Name=\"Type\"; Expression={if \\($_.PSIsContainer\\) {\"Directory\"} else {\"File\"}}}; Write-Host \"\"; Write-Host \"Checking if there are hidden directories...\"; Get-ChildItem -Path 'C:\\\\Work\\\\Projects\\\\SSF' -Hidden -Directory -Force)",
+      "PowerShell(Write-Host \"=== Complete SSF Directory Listing ===\"; Write-Host \"\"; Write-Host \"Root contents:\"; $items = Get-ChildItem -Path 'C:\\\\Work\\\\Projects\\\\SSF' -Force; foreach \\($item in $items\\) { $type = if \\($item.PSIsContainer\\) {'DIR'} else {'FILE'}; Write-Host \"  $\\($item.Name\\) [$type]\" }; Write-Host \"\"; Write-Host \"Total size:\"; $totalSize = \\(Get-ChildItem -Path 'C:\\\\Work\\\\Projects\\\\SSF' -Force -Recurse -File | Measure-Object -Property Length -Sum\\).Sum; Write-Host \"$\\([math]::Round\\($totalSize / 1MB, 2\\)\\) MB\")",
+      "Bash(.venv/Scripts/pip install *)",
+      "Bash(/c/Work/Projects/SSF/.venv/Scripts/pip install *)",
+      "PowerShell(cd C:\\\\Work\\\\Projects\\\\SSF; $env:FLASK_APP = \"run.py\"; .venv\\\\Scripts\\\\flask.exe db init 2>&1)",
+      "PowerShell(cd C:\\\\Work\\\\Projects\\\\SSF; $env:FLASK_APP = \"run.py\"; .venv\\\\Scripts\\\\flask.exe db migrate -m \"initial\" 2>&1)",
+      "PowerShell(cd C:\\\\Work\\\\Projects\\\\SSF; $env:FLASK_APP = \"run.py\"; .venv\\\\Scripts\\\\flask.exe db upgrade 2>&1)",
+      "PowerShell(cd C:\\\\Work\\\\Projects\\\\SSF; $env:FLASK_APP = \"run.py\"; .venv\\\\Scripts\\\\python.exe run.py 2>&1)",
+      "PowerShell(cd C:\\\\Work\\\\Projects\\\\SSF; $env:FLASK_APP = \"run.py\"; .venv\\\\Scripts\\\\flask.exe db migrate -m \"add member fields\" 2>&1)"
+    ]
+  }
+}
