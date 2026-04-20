@@ -12,6 +12,11 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand fw-bold" href="{{ url_for('members.index') }}">SSF</a>
+            <div class="navbar-nav me-auto">
+                <a class="nav-link" href="{{ url_for('members.index') }}">Members</a>
+                <a class="nav-link" href="{{ url_for('customers.index') }}">Customers</a>
+                <a class="nav-link" href="{{ url_for('invoices.index') }}">Invoices</a>
+            </div>
             <div class="d-flex align-items-center gap-3">
                 <span class="navbar-text">
                     {{ current_user.member.full_name }}

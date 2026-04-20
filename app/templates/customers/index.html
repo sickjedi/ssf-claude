@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Customers - SSF{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Customers</h2>
+    {% if current_user.can_write %}
+    <a href="{{ url_for('customers.add') }}" class="btn btn-primary">Add Customer</a>
+    {% endif %}
+</div>
+
+{% if customers %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for customer in customers %}
+            <tr>
+                <td>{{ customer.display_name }}</td>
+                <td><span class="badge bg-{{ 'info' if customer.customer_type == 'person' else 'primary' }} text-dark">{{ customer.customer_type | capitalize }}</span></td>
+                <td>
+                    <a href="{{ url_for('customers.view', customer_id=customer.id) }}" class="btn btn-sm btn-outline-secondary">View</a>
+                    {% if current_user.can_write %}
+                    <a href="{{ url_for('customers.edit', customer_id=customer.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                    {% endif %}
+                    {% if current_user.can_delete %}
+                    <form method="POST" action="{{ url_for('customers.delete', customer_id=customer.id) }}" class="d-inline"
+                          onsubmit="return confirm('Delete {{ customer.display_name }}?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted">No customers yet.</p>
+{% endif %}
+{% endblock %}

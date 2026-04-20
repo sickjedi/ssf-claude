@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Invoice {{ invoice.invoice_number }} - SSF{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Invoice {{ invoice.invoice_number }}</h2>
+            <div class="d-flex gap-2">
+                {% if current_user.can_write %}
+                <a href="{{ url_for('invoices.edit', invoice_id=invoice.id) }}" class="btn btn-primary">Edit</a>
+                {% endif %}
+                {% if current_user.can_delete %}
+                <form method="POST" action="{{ url_for('invoices.delete', invoice_id=invoice.id) }}"
+                      onsubmit="return confirm('Delete invoice {{ invoice.invoice_number }}?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-danger">Delete</button>
+                </form>
+                {% endif %}
+                <a href="{{ url_for('invoices.index') }}" class="btn btn-outline-secondary">Back</a>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-4">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Invoice Number</dt>
+                    <dd class="col-sm-8">{{ invoice.invoice_number }}</dd>
+                    <dt class="col-sm-4">Date</dt>
+                    <dd class="col-sm-8">{{ invoice.invoice_date.strftime('%d.%m.%Y') }}</dd>
+                    <dt class="col-sm-4">Customer</dt>
+                    <dd class="col-sm-8">
+                        <a href="{{ url_for('customers.view', customer_id=invoice.customer.id) }}">
+                            {{ invoice.customer.display_name }}
+                        </a>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h5 class="mb-3">Items</h5>
+                <table class="table">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Item</th>
+                            <th class="text-end">Price</th>
+                            <th class="text-end">Qty</th>
+                            <th class="text-end">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in invoice.items %}
+                        <tr>
+                            <td>{{ item.item_name }}</td>
+                            <td class="text-end">{{ '%.2f' | format(item.item_price) }}</td>
+                            <td class="text-end">{{ item.item_quantity }}</td>
+                            <td class="text-end">{{ '%.2f' | format(item.subtotal) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-end fw-bold">Total</td>
+                            <td class="text-end fw-bold">{{ '%.2f' | format(invoice.total) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

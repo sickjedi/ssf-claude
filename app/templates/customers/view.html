@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}{{ customer.display_name }} - SSF{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>{{ customer.display_name }}</h2>
+            <div class="d-flex gap-2">
+                {% if current_user.can_write %}
+                <a href="{{ url_for('customers.edit', customer_id=customer.id) }}" class="btn btn-primary">Edit</a>
+                {% endif %}
+                {% if current_user.can_delete %}
+                <form method="POST" action="{{ url_for('customers.delete', customer_id=customer.id) }}"
+                      onsubmit="return confirm('Delete {{ customer.display_name }}?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-danger">Delete</button>
+                </form>
+                {% endif %}
+                <a href="{{ url_for('customers.index') }}" class="btn btn-outline-secondary">Back</a>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-4">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Type</dt>
+                    <dd class="col-sm-8">{{ customer.customer_type | capitalize }}</dd>
+
+                    {% if customer.customer_type == 'person' %}
+                    <dt class="col-sm-4">Name</dt>
+                    <dd class="col-sm-8">{{ customer.customer_name }}</dd>
+                    {% if customer.customer_address %}
+                    <dt class="col-sm-4">Address</dt>
+                    <dd class="col-sm-8">{{ customer.customer_address }}</dd>
+                    {% endif %}
+                    {% else %}
+                    <dt class="col-sm-4">Company Name</dt>
+                    <dd class="col-sm-8">{{ customer.company_name }}</dd>
+                    <dt class="col-sm-4">Address</dt>
+                    <dd class="col-sm-8">{{ customer.company_address }}</dd>
+                    <dt class="col-sm-4">OIB</dt>
+                    <dd class="col-sm-8">{{ customer.company_oib }}</dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+
+        {% if customer.invoices %}
+        <h5>Invoices</h5>
+        <table class="table table-sm table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Number</th>
+                    <th>Date</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for invoice in customer.invoices %}
+                <tr>
+                    <td><a href="{{ url_for('invoices.view', invoice_id=invoice.id) }}">{{ invoice.invoice_number }}</a></td>
+                    <td>{{ invoice.invoice_date.strftime('%d.%m.%Y') }}</td>
+                    <td>{{ '%.2f' | format(invoice.total) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

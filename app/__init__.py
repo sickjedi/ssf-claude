@@ -30,6 +30,12 @@ def create_app(config_class=Config):
     from app.members import bp as members_bp
     app.register_blueprint(members_bp, url_prefix='/members')
 
+    from app.customers import bp as customers_bp
+    app.register_blueprint(customers_bp, url_prefix='/customers')
+
+    from app.invoices import bp as invoices_bp
+    app.register_blueprint(invoices_bp, url_prefix='/invoices')
+
     with app.app_context():
         from app.cli import create_user  # noqa: F401
 

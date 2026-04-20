@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - SSF{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>{{ title }}</h2>
+            <a href="{{ url_for('customers.index') }}" class="btn btn-outline-secondary">Back</a>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <form method="POST" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        {{ form.customer_type.label(class="form-label") }}
+                        {{ form.customer_type(class="form-select", id="customer_type") }}
+                    </div>
+
+                    <div id="person-fields">
+                        <div class="mb-3">
+                            {{ form.customer_name.label(class="form-label") }}
+                            {{ form.customer_name(class="form-control" + (" is-invalid" if form.customer_name.errors else "")) }}
+                            {% for error in form.customer_name.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.customer_address.label(class="form-label") }}
+                            {{ form.customer_address(class="form-control") }}
+                        </div>
+                    </div>
+
+                    <div id="company-fields" style="display:none">
+                        <div class="mb-3">
+                            {{ form.company_name.label(class="form-label") }}
+                            {{ form.company_name(class="form-control" + (" is-invalid" if form.company_name.errors else "")) }}
+                            {% for error in form.company_name.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.company_address.label(class="form-label") }}
+                            {{ form.company_address(class="form-control" + (" is-invalid" if form.company_address.errors else "")) }}
+                            {% for error in form.company_address.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.company_oib.label(class="form-label") }}
+                            {{ form.company_oib(class="form-control" + (" is-invalid" if form.company_oib.errors else ""), maxlength=11) }}
+                            {% for error in form.company_oib.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-2">
+                        {{ form.submit(class="btn btn-primary") }}
+                        <a href="{{ url_for('customers.index') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const typeSelect = document.getElementById('customer_type');
+    const personFields = document.getElementById('person-fields');
+    const companyFields = document.getElementById('company-fields');
+
+    function toggleFields() {
+        if (typeSelect.value === 'company') {
+            personFields.style.display = 'none';
+            companyFields.style.display = 'block';
+        } else {
+            personFields.style.display = 'block';
+            companyFields.style.display = 'none';
+        }
+    }
+
+    typeSelect.addEventListener('change', toggleFields);
+    toggleFields();
+</script>
+{% endblock %}

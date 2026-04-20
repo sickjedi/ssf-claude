@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Invoices - SSF{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Invoices</h2>
+    {% if current_user.can_write %}
+    <a href="{{ url_for('invoices.add') }}" class="btn btn-primary">Add Invoice</a>
+    {% endif %}
+</div>
+
+{% if invoices %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Invoice No.</th>
+                <th>Date</th>
+                <th>Customer</th>
+                <th>Total</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for invoice in invoices %}
+            <tr>
+                <td>{{ invoice.invoice_number }}</td>
+                <td>{{ invoice.invoice_date.strftime('%d.%m.%Y') }}</td>
+                <td>{{ invoice.customer.display_name }}</td>
+                <td>{{ '%.2f' | format(invoice.total) }}</td>
+                <td>
+                    <a href="{{ url_for('invoices.view', invoice_id=invoice.id) }}" class="btn btn-sm btn-outline-secondary">View</a>
+                    {% if current_user.can_write %}
+                    <a href="{{ url_for('invoices.edit', invoice_id=invoice.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                    {% endif %}
+                    {% if current_user.can_delete %}
+                    <form method="POST" action="{{ url_for('invoices.delete', invoice_id=invoice.id) }}" class="d-inline"
+                          onsubmit="return confirm('Delete invoice {{ invoice.invoice_number }}?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted">No invoices yet.</p>
+{% endif %}
+{% endblock %}

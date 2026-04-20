@@ -17,7 +17,8 @@
       "PowerShell(cd C:\\\\Work\\\\Projects\\\\SSF; $env:FLASK_APP = \"run.py\"; .venv\\\\Scripts\\\\flask.exe db migrate -m \"initial\" 2>&1)",
       "PowerShell(cd C:\\\\Work\\\\Projects\\\\SSF; $env:FLASK_APP = \"run.py\"; .venv\\\\Scripts\\\\flask.exe db upgrade 2>&1)",
       "PowerShell(cd C:\\\\Work\\\\Projects\\\\SSF; $env:FLASK_APP = \"run.py\"; .venv\\\\Scripts\\\\python.exe run.py 2>&1)",
-      "PowerShell(cd C:\\\\Work\\\\Projects\\\\SSF; $env:FLASK_APP = \"run.py\"; .venv\\\\Scripts\\\\flask.exe db migrate -m \"add member fields\" 2>&1)"
+      "PowerShell(cd C:\\\\Work\\\\Projects\\\\SSF; $env:FLASK_APP = \"run.py\"; .venv\\\\Scripts\\\\flask.exe db migrate -m \"add member fields\" 2>&1)",
+      "PowerShell(cd C:\\\\Work\\\\Projects\\\\SSF; $env:FLASK_APP = \"run.py\"; .venv\\\\Scripts\\\\flask.exe db migrate -m \"add customers invoices invoice_items\" 2>&1)"
     ]
   }
 }

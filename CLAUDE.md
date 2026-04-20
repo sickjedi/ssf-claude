@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Tech Stack
 
 - **Python 3.13** · Flask 3.1 · SQLAlchemy 2.x · Flask-Migrate (Alembic) · Flask-Login · Flask-WTF
-- **Database:** PostgreSQL (psycopg2-binary)
+- **Database:** PostgreSQL on Aiven (psycopg2-binary)
 - **Frontend:** Bootstrap 5 (CDN), Jinja2 templates
 
 ## Commands
@@ -18,12 +18,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 python run.py
 
 # Database migrations
-flask db init       # first time only
 flask db migrate -m "description"
 flask db upgrade
 
-# Install dependencies
-pip install -r requirements.txt
+# Seed first admin user
+flask create-user
 ```
 
 Set `FLASK_APP=run.py` if flask CLI commands don't find the app.
@@ -32,32 +31,37 @@ Set `FLASK_APP=run.py` if flask CLI commands don't find the app.
 
 Copy `.env.example` to `.env` and fill in:
 - `SECRET_KEY` — long random string
-- `DATABASE_URL` — `postgresql://user:password@localhost:5432/ssf_db`
+- `DATABASE_URL` — `postgres://...` (config.py automatically rewrites to `postgresql://`)
 
 ## Architecture
 
-**App factory** in `app/__init__.py` — extensions (db, login_manager, migrate, csrf) are initialised there and blueprints are registered with URL prefixes.
+**App factory** in `app/__init__.py` — extensions (db, login_manager, migrate, csrf) initialised there, blueprints registered with URL prefixes.
 
 ```
 app/
 ├── __init__.py          # create_app() factory
+├── cli.py               # flask create-user command
 ├── models/
-│   ├── member.py        # Member — NGO person record (stub, fields TBD)
-│   └── user.py          # User + Role enum, password hashing, permission helpers
-├── auth/                # /auth blueprint — login / logout
-│   ├── forms.py
-│   └── routes.py
-├── members/             # /members blueprint — member CRUD
-│   └── routes.py
+│   ├── member.py        # Member — NGO person record
+│   ├── user.py          # User + Role enum, password hashing, permission helpers
+│   ├── customer.py      # Customer (STI base), PersonCustomer, CompanyCustomer
+│   ├── invoice.py       # Invoice
+│   └── invoice_item.py  # InvoiceItem
+├── auth/                # /auth — login / logout
+├── members/             # /members — member CRUD
+├── customers/           # /customers — customer CRUD
+├── invoices/            # /invoices — invoice CRUD
 └── templates/
-    ├── base.html
-    ├── auth/login.html
-    └── members/index.html
+    ├── base.html        # navbar: Members, Customers, Invoices
+    ├── auth/
+    ├── members/         # index, form, view
+    ├── customers/       # index, form (type toggle JS), view
+    └── invoices/        # index, form (dynamic items JS), view
 ```
 
 ## Data Model
 
-**Key relationship:** every `User` must link to exactly one `Member` (one-to-one via `member_id` FK, unique).
+**User → Member:** every `User` must link to exactly one `Member` (one-to-one, `member_id` FK unique). Members can exist without a user account.
 
 **Roles** (enum on `User`):
 
@@ -70,9 +74,14 @@ app/
 
 Use `current_user.can_delete` / `current_user.can_write` in routes and templates to gate access.
 
+**Customer** uses single-table inheritance (STI) with `customer_type` discriminator (`person` / `company`). Use `customer.display_name` for the name regardless of type.
+
+**Invoice → InvoiceItem:** one-to-many, cascade delete. `invoice.total` and `item.subtotal` are computed properties.
+
 ## Conventions
 
-- Blueprint modules import their `routes` module at the bottom of `__init__.py` to avoid circular imports.
-- Passwords are hashed with Werkzeug (`set_password` / `check_password` on `User`).
-- CSRF protection is global via `CSRFProtect`; all POST forms must include `{{ form.hidden_tag() }}`.
-- The `Member` model is a stub — additional fields will be added when the full model is provided.
+- Blueprint `__init__.py` imports `routes` at the bottom to avoid circular imports.
+- Passwords hashed with Werkzeug (`set_password` / `check_password` on `User`).
+- CSRF: global via `CSRFProtect`. WTForms forms use `{{ form.hidden_tag() }}`; manual POST forms use `<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">`.
+- Invoice items are submitted as `item_name[]`, `item_price[]`, `item_quantity[]` arrays and parsed manually in the route (not via WTForms FieldList).
+- Delete is blocked if protected relations exist (member with user account, customer with invoices).
