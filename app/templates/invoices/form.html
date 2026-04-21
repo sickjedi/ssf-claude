@@ -15,13 +15,17 @@
         <div class="card-body p-4">
             <h5 class="mb-3">Invoice Details</h5>
             <div class="row">
+                {% if invoice %}
                 <div class="col-md-4 mb-3">
-                    {{ form.invoice_number.label(class="form-label") }}
-                    {{ form.invoice_number(class="form-control" + (" is-invalid" if form.invoice_number.errors else "")) }}
-                    {% for error in form.invoice_number.errors %}
-                    <div class="invalid-feedback">{{ error }}</div>
-                    {% endfor %}
+                    <label class="form-label">Invoice Number</label>
+                    <input type="text" class="form-control" value="{{ invoice.invoice_number }}" disabled>
                 </div>
+                {% else %}
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Invoice Number</label>
+                    <input type="text" class="form-control" value="Auto-generated on save" disabled>
+                </div>
+                {% endif %}
                 <div class="col-md-4 mb-3">
                     {{ form.invoice_date.label(class="form-label") }}
                     {{ form.invoice_date(class="form-control" + (" is-invalid" if form.invoice_date.errors else "")) }}
