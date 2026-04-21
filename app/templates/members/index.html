@@ -19,6 +19,7 @@
                 <th>OIB</th>
                 <th>Email</th>
                 <th>Phone</th>
+                <th>Role</th>
                 <th>Status</th>
                 <th>Actions</th>
             </tr>
@@ -30,6 +31,13 @@
                 <td>{{ member.oib }}</td>
                 <td>{{ member.email_address }}</td>
                 <td>{{ member.phone }}</td>
+                <td>
+                    {% if member.user %}
+                    <span class="badge bg-secondary">{{ member.user.role.value }}</span>
+                    {% else %}
+                    <span class="text-muted">—</span>
+                    {% endif %}
+                </td>
                 <td>
                     {% if member.is_active %}
                     <span class="badge bg-success">Active</span>
