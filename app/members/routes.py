@@ -56,6 +56,10 @@ def add():
             flash('A member with this OIB already exists.', 'danger')
             return render_template('members/form.html', form=form, title='Add Member')
 
+        if Member.query.filter_by(email_address=form.email_address.data).first():
+            flash('A member with this email address already exists.', 'danger')
+            return render_template('members/form.html', form=form, title='Add Member')
+
         member = Member(
             first_name=form.first_name.data,
             last_name=form.last_name.data,
@@ -100,6 +104,11 @@ def edit(member_id):
         existing = Member.query.filter_by(oib=form.oib.data).first()
         if existing and existing.id != member.id:
             flash('A member with this OIB already exists.', 'danger')
+            return render_template('members/form.html', form=form, title='Edit Member', member=member)
+
+        existing_email = Member.query.filter_by(email_address=form.email_address.data).first()
+        if existing_email and existing_email.id != member.id:
+            flash('A member with this email address already exists.', 'danger')
             return render_template('members/form.html', form=form, title='Edit Member', member=member)
 
         form.populate_obj(member)
