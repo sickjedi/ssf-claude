@@ -90,11 +90,17 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             {{ form.end_date.label(class="form-label") }}
-                            {{ form.end_date(class="form-control") }}
+                            {{ form.end_date(class="form-control" + (" is-invalid" if form.end_date.errors else "")) }}
+                            {% for error in form.end_date.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
                         </div>
                         <div class="col-md-6 mb-3">
                             {{ form.end_reason.label(class="form-label") }}
-                            {{ form.end_reason(class="form-control", rows=3) }}
+                            {{ form.end_reason(class="form-control" + (" is-invalid" if form.end_reason.errors else ""), rows=3) }}
+                            {% for error in form.end_reason.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
                         </div>
                     </div>
 

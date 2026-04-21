@@ -10,6 +10,19 @@ from app.models.user import User, Role
 _UNIQUE_ROLES = {Role.PRESIDENT, Role.VICE_PRESIDENT, Role.SECRETARY}
 
 
+def _deactivation_errors(form):
+    if form.is_active.data:
+        return False
+    has_error = False
+    if not form.end_date.data:
+        form.end_date.errors.append('End Date is required when the member is deactivated.')
+        has_error = True
+    if not form.end_reason.data or not form.end_reason.data.strip():
+        form.end_reason.errors.append('End Reason is required when the member is deactivated.')
+        has_error = True
+    return has_error
+
+
 def _role_conflict(role, exclude_user_id=None):
     if role not in _UNIQUE_ROLES:
         return None
@@ -36,6 +49,9 @@ def add():
     form.is_active.data = True if form.is_active.data is None else form.is_active.data
 
     if form.validate_on_submit():
+        if _deactivation_errors(form):
+            return render_template('members/form.html', form=form, title='Add Member')
+
         if Member.query.filter_by(oib=form.oib.data).first():
             flash('A member with this OIB already exists.', 'danger')
             return render_template('members/form.html', form=form, title='Add Member')
@@ -78,6 +94,9 @@ def edit(member_id):
     form = MemberForm(obj=member)
 
     if form.validate_on_submit():
+        if _deactivation_errors(form):
+            return render_template('members/form.html', form=form, title='Edit Member', member=member)
+
         existing = Member.query.filter_by(oib=form.oib.data).first()
         if existing and existing.id != member.id:
             flash('A member with this OIB already exists.', 'danger')
