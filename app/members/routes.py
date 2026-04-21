@@ -4,7 +4,7 @@ from app import db
 from app.members import bp
 from app.members.forms import MemberForm
 from app.models.member import Member
-from app.models.user import Role
+from app.models.user import User, Role
 
 
 @bp.route('/')
@@ -73,9 +73,25 @@ def edit(member_id):
 
         form.populate_obj(member)
 
-        if current_user.can_delete and member.user:
-            member.user.role = Role(form.user_role.data)
-            member.user.is_active = form.user_is_active.data
+        if current_user.can_delete:
+            if member.user:
+                member.user.role = Role(form.user_role.data)
+                member.user.is_active = form.user_is_active.data
+            elif form.new_user_email.data:
+                if User.query.filter_by(email=form.new_user_email.data.lower()).first():
+                    flash('A user with this email already exists.', 'danger')
+                    return render_template('members/form.html', form=form, title='Edit Member', member=member)
+                if not form.new_user_password.data:
+                    flash('Password is required to create a user account.', 'danger')
+                    return render_template('members/form.html', form=form, title='Edit Member', member=member)
+                new_user = User(
+                    email=form.new_user_email.data.lower(),
+                    role=Role(form.new_user_role.data),
+                    is_active=True,
+                    member=member,
+                )
+                new_user.set_password(form.new_user_password.data)
+                db.session.add(new_user)
 
         db.session.commit()
         flash(f'Member {member.full_name} updated successfully.', 'success')

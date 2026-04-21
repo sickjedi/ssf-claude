@@ -98,6 +98,32 @@
                         </div>
                     </div>
 
+                    {% if member and not member.user and current_user.can_delete %}
+                    <hr class="my-4">
+                    <h6 class="mb-1">Create User Account</h6>
+                    <p class="text-muted small mb-3">Leave email blank to skip.</p>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.new_user_email.label(class="form-label") }}
+                            {{ form.new_user_email(class="form-control" + (" is-invalid" if form.new_user_email.errors else "")) }}
+                            {% for error in form.new_user_email.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.new_user_password.label(class="form-label") }}
+                            {{ form.new_user_password(class="form-control" + (" is-invalid" if form.new_user_password.errors else ""), type="password") }}
+                            {% for error in form.new_user_password.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.new_user_role.label(class="form-label") }}
+                            {{ form.new_user_role(class="form-select") }}
+                        </div>
+                    </div>
+                    {% endif %}
+
                     {% if member and member.user and current_user.can_delete %}
                     <hr class="my-4">
                     <h6 class="mb-3">User Account</h6>
