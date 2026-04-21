@@ -77,6 +77,7 @@ app/
 |------|--------|-------|------|
 | `admin` | ✓ | ✓ | ✓ |
 | `president` | ✓ | ✓ | ✓ |
+| `vice_president` | — | ✓ | ✓ |
 | `secretary` | — | ✓ | ✓ |
 | `viewer` | — | — | ✓ |
 

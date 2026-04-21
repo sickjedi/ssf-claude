@@ -17,10 +17,10 @@ class MemberForm(FlaskForm):
     end_date = DateField('End Date', validators=[Optional()])
     end_reason = TextAreaField('End Reason', validators=[Optional(), Length(max=500)])
     # Existing user account — rendered when member already has a user
-    user_role = SelectField('Role', choices=[(r.value, r.value.capitalize()) for r in Role], validators=[Optional()])
+    user_role = SelectField('Role', choices=[(r.value, r.value.replace('_', ' ').title()) for r in Role], validators=[Optional()])
     user_is_active = BooleanField('User Account Active')
     # New user account — rendered when member has no user
     new_user_email = StringField('Email', validators=[Optional(), Email(), Length(max=255)])
     new_user_password = StringField('Password', validators=[Optional(), Length(min=8, max=128)])
-    new_user_role = SelectField('Role', choices=[(r.value, r.value.capitalize()) for r in Role], validators=[Optional()])
+    new_user_role = SelectField('Role', choices=[(r.value, r.value.replace('_', ' ').title()) for r in Role], validators=[Optional()])
     submit = SubmitField('Save')

@@ -8,6 +8,7 @@ from app import db, login_manager
 class Role(enum.Enum):
     ADMIN = 'admin'
     PRESIDENT = 'president'
+    VICE_PRESIDENT = 'vice_president'
     SECRETARY = 'secretary'
     VIEWER = 'viewer'
 
@@ -37,7 +38,7 @@ class User(UserMixin, db.Model):
 
     @property
     def can_write(self):
-        return self.role in (Role.ADMIN, Role.PRESIDENT, Role.SECRETARY)
+        return self.role in (Role.ADMIN, Role.PRESIDENT, Role.VICE_PRESIDENT, Role.SECRETARY)
 
     def __repr__(self):
         return f'<User {self.email} [{self.role.value}]>'

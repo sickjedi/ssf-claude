@@ -31,7 +31,8 @@
       "PowerShell(cd C:\\\\Work\\\\Projects\\\\SSF; $env:FLASK_APP=\"app\"; $env:FLASK_DEBUG=\"1\"; Start-Process -FilePath \"python\" -ArgumentList \"-m flask run\" -WindowStyle Hidden -PassThru | Select-Object Id)",
       "Bash(python -m flask run)",
       "Bash(.venv/Scripts/python.exe -m flask run)",
-      "PowerShell(Test-NetConnection *)"
+      "PowerShell(Test-NetConnection *)",
+      "PowerShell(Stop-Process *)"
     ]
   }
 }
