@@ -39,6 +39,9 @@ def create_app(config_class=Config):
     from app.items import bp as items_bp
     app.register_blueprint(items_bp, url_prefix='/items')
 
+    from app.settings import bp as settings_bp
+    app.register_blueprint(settings_bp, url_prefix='/settings')
+
     with app.app_context():
         from app.cli import create_user  # noqa: F401
 

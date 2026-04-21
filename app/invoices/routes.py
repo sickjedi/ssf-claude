@@ -1,6 +1,8 @@
+import io
 import json
-from flask import render_template, redirect, url_for, flash, abort, request
+from flask import render_template, redirect, url_for, flash, abort, request, make_response
 from flask_login import login_required, current_user
+from xhtml2pdf import pisa
 from app import db
 from app.invoices import bp
 from app.invoices.forms import InvoiceForm
@@ -8,6 +10,8 @@ from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
 from app.models.customer import Customer
 from app.models.item import Item
+from app.models.settings import Settings
+from app.models.user import User, Role
 
 
 def _generate_invoice_number(year):
@@ -17,6 +21,16 @@ def _generate_invoice_number(year):
     else:
         seq = 1
     return f'{seq:02d}/{year}'
+
+
+_CROATIAN = {'č':'&#269;','Č':'&#268;','ć':'&#263;','Ć':'&#262;',
+             'š':'&#353;','Š':'&#352;','đ':'&#273;','Đ':'&#272;',
+             'ž':'&#382;','Ž':'&#381;'}
+
+def _encode_croatian(text):
+    for char, entity in _CROATIAN.items():
+        text = text.replace(char, entity)
+    return text
 
 
 def _customer_choices():
@@ -139,6 +153,27 @@ def _invoice_items_data(invoice):
     return [{'item_id': i.item_id or '', 'item_name': i.item_name,
               'item_price': i.item_price, 'item_quantity': i.item_quantity}
             for i in invoice.items]
+
+
+@bp.route('/<int:invoice_id>/pdf')
+@login_required
+def pdf(invoice_id):
+    invoice = db.session.get(Invoice, invoice_id) or abort(404)
+    settings = Settings.get()
+    president = User.query.filter_by(role=Role.PRESIDENT).first()
+    president_name = president.member.full_name if president else None
+
+    html = _encode_croatian(render_template('invoices/pdf.html', invoice=invoice,
+                                            settings=settings, president_name=president_name))
+
+    pdf_buffer = io.BytesIO()
+    pisa.CreatePDF(io.StringIO(html), dest=pdf_buffer)
+
+    filename = f'invoice_{invoice.invoice_number.replace("/", "-")}.pdf'
+    response = make_response(pdf_buffer.getvalue())
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
 
 
 @bp.route('/<int:invoice_id>/delete', methods=['POST'])

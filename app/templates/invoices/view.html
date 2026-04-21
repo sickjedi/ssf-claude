@@ -18,6 +18,7 @@
                     <button type="submit" class="btn btn-outline-danger">Delete</button>
                 </form>
                 {% endif %}
+                <a href="{{ url_for('invoices.pdf', invoice_id=invoice.id) }}" class="btn btn-outline-dark">Download PDF</a>
                 <a href="{{ url_for('invoices.index') }}" class="btn btn-outline-secondary">Back</a>
             </div>
         </div>
