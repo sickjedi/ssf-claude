@@ -7,6 +7,18 @@ from app.models.member import Member
 from app.models.user import User, Role
 
 
+_UNIQUE_ROLES = {Role.PRESIDENT, Role.VICE_PRESIDENT, Role.SECRETARY}
+
+
+def _role_conflict(role, exclude_user_id=None):
+    if role not in _UNIQUE_ROLES:
+        return None
+    q = User.query.filter_by(role=role)
+    if exclude_user_id:
+        q = q.filter(User.id != exclude_user_id)
+    return q.first()
+
+
 @bp.route('/')
 @login_required
 def index():
@@ -75,7 +87,12 @@ def edit(member_id):
 
         if current_user.can_delete:
             if member.user:
-                member.user.role = Role(form.user_role.data)
+                new_role = Role(form.user_role.data)
+                conflict = _role_conflict(new_role, exclude_user_id=member.user.id)
+                if conflict:
+                    flash(f'Role {new_role.value.replace("_", " ").title()} is already assigned to {conflict.member.full_name}.', 'danger')
+                    return render_template('members/form.html', form=form, title='Edit Member', member=member)
+                member.user.role = new_role
                 member.user.is_active = form.user_is_active.data
             elif form.new_user_email.data:
                 if User.query.filter_by(email=form.new_user_email.data.lower()).first():
@@ -84,9 +101,14 @@ def edit(member_id):
                 if not form.new_user_password.data:
                     flash('Password is required to create a user account.', 'danger')
                     return render_template('members/form.html', form=form, title='Edit Member', member=member)
+                new_role = Role(form.new_user_role.data)
+                conflict = _role_conflict(new_role)
+                if conflict:
+                    flash(f'Role {new_role.value.replace("_", " ").title()} is already assigned to {conflict.member.full_name}.', 'danger')
+                    return render_template('members/form.html', form=form, title='Edit Member', member=member)
                 new_user = User(
                     email=form.new_user_email.data.lower(),
-                    role=Role(form.new_user_role.data),
+                    role=new_role,
                     is_active=True,
                     member=member,
                 )
