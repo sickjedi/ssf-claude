@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Python 3.13** · Flask 3.1 · SQLAlchemy 2.x · Flask-Migrate (Alembic) · Flask-Login · Flask-WTF
 - **Database:** PostgreSQL on Aiven (psycopg2-binary)
 - **Frontend:** Bootstrap 5 (CDN), Jinja2 templates
+- **PDF generation:** fpdf2 — embeds Windows Arial TTF directly (avoids xhtml2pdf's broken temp-file font loading on Windows)
 
 ## Commands
 
@@ -46,17 +47,24 @@ app/
 │   ├── user.py          # User + Role enum, password hashing, permission helpers
 │   ├── customer.py      # Customer (STI base), PersonCustomer, CompanyCustomer
 │   ├── invoice.py       # Invoice
-│   └── invoice_item.py  # InvoiceItem
+│   ├── invoice_item.py  # InvoiceItem
+│   ├── item.py          # Item — pre-defined catalog for invoice line items
+│   └── settings.py      # Settings — single-row org config; Settings.get() creates if missing
 ├── auth/                # /auth — login / logout
 ├── members/             # /members — member CRUD
 ├── customers/           # /customers — customer CRUD
-├── invoices/            # /invoices — invoice CRUD
+├── invoices/            # /invoices — invoice CRUD + PDF export
+│   └── pdf_generator.py # fpdf2-based PDF; generates invoice layout with embedded Arial font
+├── items/               # /items — item catalog CRUD
+├── settings/            # /settings — org settings (admin only)
 └── templates/
-    ├── base.html        # navbar: Members, Customers, Invoices
+    ├── base.html        # navbar: Members, Customers, Invoices, Items, Settings
     ├── auth/
     ├── members/         # index, form, view
     ├── customers/       # index, form (type toggle JS), view
-    └── invoices/        # index, form (dynamic items JS), view
+    ├── invoices/        # index, form (dynamic items JS), view
+    ├── items/           # index, form
+    └── settings/        # edit
 ```
 
 ## Data Model
@@ -76,7 +84,7 @@ Use `current_user.can_delete` / `current_user.can_write` in routes and templates
 
 **Customer** uses single-table inheritance (STI) with `customer_type` discriminator (`person` / `company`). Use `customer.display_name` for the name regardless of type.
 
-**Invoice → InvoiceItem:** one-to-many, cascade delete. `invoice.total` and `item.subtotal` are computed properties.
+**Invoice → InvoiceItem:** one-to-many, cascade delete. `invoice.total` and `item.subtotal` are computed properties. Invoice numbers are auto-generated as `01/2026` (sequential per year, zero-padded). Item prices are snapshotted at creation time; `item_id` FK is nullable (catalog item may be deleted later).
 
 ## Conventions
 
