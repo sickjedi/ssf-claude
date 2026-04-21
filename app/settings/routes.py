@@ -1,0 +1,23 @@
+from flask import render_template, flash, abort
+from flask_login import login_required, current_user
+from app import db
+from app.settings import bp
+from app.settings.forms import SettingsForm
+from app.models.settings import Settings
+
+
+@bp.route('/', methods=['GET', 'POST'])
+@login_required
+def edit():
+    if not current_user.can_delete:
+        abort(403)
+
+    settings = Settings.get()
+    form = SettingsForm(obj=settings)
+
+    if form.validate_on_submit():
+        form.populate_obj(settings)
+        db.session.commit()
+        flash('Settings saved.', 'success')
+
+    return render_template('settings/edit.html', form=form)

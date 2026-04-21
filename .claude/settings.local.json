@@ -22,7 +22,16 @@
       "PowerShell(cd C:\\\\Work\\\\Projects\\\\SSF; $env:FLASK_APP = \"run.py\"; .venv\\\\Scripts\\\\flask.exe db migrate -m \"add items table and item_id to invoice_items\" 2>&1)",
       "PowerShell(cd C:\\\\Work\\\\Projects\\\\SSF; $env:FLASK_APP = \"run.py\"; .venv\\\\Scripts\\\\flask.exe db migrate -m \"add settings table\" 2>&1 | Select-Object -Last 8)",
       "PowerShell(cd C:\\\\Work\\\\Projects\\\\SSF; $env:FLASK_APP = \"run.py\"; .venv\\\\Scripts\\\\flask.exe db upgrade 2>&1 | Select-Object -Last 3)",
-      "PowerShell(cd C:\\\\Work\\\\Projects\\\\SSF; $env:FLASK_APP = \"run.py\"; .venv\\\\Scripts\\\\python.exe run.py)"
+      "PowerShell(cd C:\\\\Work\\\\Projects\\\\SSF; $env:FLASK_APP = \"run.py\"; .venv\\\\Scripts\\\\python.exe run.py)",
+      "Bash(pip install *)",
+      "Bash(python -c \"from fpdf import FPDF; print\\('fpdf2 ok'\\)\")",
+      "Bash(python -c \"import fpdf; print\\(fpdf.__version__\\)\")",
+      "Bash(echo \"exit: $?\")",
+      "Bash(pip show *)",
+      "PowerShell(cd C:\\\\Work\\\\Projects\\\\SSF; $env:FLASK_APP=\"app\"; $env:FLASK_DEBUG=\"1\"; Start-Process -FilePath \"python\" -ArgumentList \"-m flask run\" -WindowStyle Hidden -PassThru | Select-Object Id)",
+      "Bash(python -m flask run)",
+      "Bash(.venv/Scripts/python.exe -m flask run)",
+      "PowerShell(Test-NetConnection *)"
     ]
   }
 }

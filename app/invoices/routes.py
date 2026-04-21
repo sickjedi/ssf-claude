@@ -1,11 +1,10 @@
-import io
 import json
 from flask import render_template, redirect, url_for, flash, abort, request, make_response
 from flask_login import login_required, current_user
-from xhtml2pdf import pisa
 from app import db
 from app.invoices import bp
 from app.invoices.forms import InvoiceForm
+from app.invoices.pdf_generator import generate_invoice_pdf
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
 from app.models.customer import Customer
@@ -21,16 +20,6 @@ def _generate_invoice_number(year):
     else:
         seq = 1
     return f'{seq:02d}/{year}'
-
-
-_CROATIAN = {'č':'&#269;','Č':'&#268;','ć':'&#263;','Ć':'&#262;',
-             'š':'&#353;','Š':'&#352;','đ':'&#273;','Đ':'&#272;',
-             'ž':'&#382;','Ž':'&#381;'}
-
-def _encode_croatian(text):
-    for char, entity in _CROATIAN.items():
-        text = text.replace(char, entity)
-    return text
 
 
 def _customer_choices():
@@ -163,14 +152,10 @@ def pdf(invoice_id):
     president = User.query.filter_by(role=Role.PRESIDENT).first()
     president_name = president.member.full_name if president else None
 
-    html = _encode_croatian(render_template('invoices/pdf.html', invoice=invoice,
-                                            settings=settings, president_name=president_name))
-
-    pdf_buffer = io.BytesIO()
-    pisa.CreatePDF(io.StringIO(html), dest=pdf_buffer)
+    pdf_bytes = generate_invoice_pdf(invoice, settings, president_name)
 
     filename = f'invoice_{invoice.invoice_number.replace("/", "-")}.pdf'
-    response = make_response(pdf_buffer.getvalue())
+    response = make_response(pdf_bytes)
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
