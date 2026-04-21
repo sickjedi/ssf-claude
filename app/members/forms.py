@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, BooleanField, DateField, TextAreaField, SubmitField
+from wtforms import StringField, BooleanField, DateField, TextAreaField, SubmitField, SelectField
 from wtforms.validators import DataRequired, Email, Length, Optional
+from app.models.user import Role
 
 
 class MemberForm(FlaskForm):
@@ -15,4 +16,7 @@ class MemberForm(FlaskForm):
     is_active = BooleanField('Active')
     end_date = DateField('End Date', validators=[Optional()])
     end_reason = TextAreaField('End Reason', validators=[Optional(), Length(max=500)])
+    # User account fields — only rendered/processed when member has a user and editor is admin/president
+    user_role = SelectField('Role', choices=[(r.value, r.value.capitalize()) for r in Role], validators=[Optional()])
+    user_is_active = BooleanField('User Account Active')
     submit = SubmitField('Save')

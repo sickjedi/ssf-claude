@@ -4,6 +4,7 @@ from app import db
 from app.members import bp
 from app.members.forms import MemberForm
 from app.models.member import Member
+from app.models.user import Role
 
 
 @bp.route('/')
@@ -71,9 +72,18 @@ def edit(member_id):
             return render_template('members/form.html', form=form, title='Edit Member', member=member)
 
         form.populate_obj(member)
+
+        if current_user.can_delete and member.user:
+            member.user.role = Role(form.user_role.data)
+            member.user.is_active = form.user_is_active.data
+
         db.session.commit()
         flash(f'Member {member.full_name} updated successfully.', 'success')
         return redirect(url_for('members.view', member_id=member.id))
+
+    if member.user and current_user.can_delete:
+        form.user_role.data = member.user.role.value
+        form.user_is_active.data = member.user.is_active
 
     return render_template('members/form.html', form=form, title='Edit Member', member=member)
 

@@ -98,6 +98,23 @@
                         </div>
                     </div>
 
+                    {% if member and member.user and current_user.can_delete %}
+                    <hr class="my-4">
+                    <h6 class="mb-3">User Account</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.user_role.label(class="form-label") }}
+                            {{ form.user_role(class="form-select") }}
+                        </div>
+                        <div class="col-md-6 mb-3 d-flex align-items-end">
+                            <div class="form-check">
+                                {{ form.user_is_active(class="form-check-input") }}
+                                {{ form.user_is_active.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <div class="d-flex gap-2 mt-2">
                         {{ form.submit(class="btn btn-primary") }}
                         <a href="{{ url_for('members.index') }}" class="btn btn-outline-secondary">Cancel</a>
