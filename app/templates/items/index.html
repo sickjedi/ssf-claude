@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Items - SSF{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Items</h2>
+    {% if current_user.can_write %}
+    <a href="{{ url_for('items.add') }}" class="btn btn-primary">Add Item</a>
+    {% endif %}
+</div>
+
+{% if items %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.item_name }}</td>
+                <td>{{ '%.2f' | format(item.item_price) }}</td>
+                <td>
+                    {% if current_user.can_write %}
+                    <a href="{{ url_for('items.edit', item_id=item.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                    {% endif %}
+                    {% if current_user.can_delete %}
+                    <form method="POST" action="{{ url_for('items.delete', item_id=item.id) }}" class="d-inline"
+                          onsubmit="return confirm('Delete item &quot;{{ item.item_name }}&quot;?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted">No items yet.</p>
+{% endif %}
+{% endblock %}

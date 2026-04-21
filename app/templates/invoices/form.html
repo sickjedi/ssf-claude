@@ -47,17 +47,23 @@
                 <table class="table align-middle" id="items-table">
                     <thead class="table-light">
                         <tr>
+                            <th>Select Item</th>
                             <th>Item Name</th>
-                            <th style="width:150px">Price</th>
-                            <th style="width:120px">Quantity</th>
-                            <th style="width:130px" class="text-end">Subtotal</th>
-                            <th style="width:60px"></th>
+                            <th style="width:140px">Price</th>
+                            <th style="width:110px">Quantity</th>
+                            <th style="width:120px" class="text-end">Subtotal</th>
+                            <th style="width:50px"></th>
                         </tr>
                     </thead>
                     <tbody id="items-body">
                         {% for item in items %}
                         <tr>
-                            <td><input type="text" name="item_name[]" class="form-control" value="{{ item.item_name }}" required></td>
+                            <td>
+                                <select name="item_id[]" class="form-select item-select">
+                                    <option value="">— custom —</option>
+                                </select>
+                            </td>
+                            <td><input type="text" name="item_name[]" class="form-control item-name" value="{{ item.item_name }}" required></td>
                             <td><input type="number" name="item_price[]" class="form-control item-price" value="{{ item.item_price }}" step="0.01" min="0" required></td>
                             <td><input type="number" name="item_quantity[]" class="form-control item-qty" value="{{ item.item_quantity }}" min="1" required></td>
                             <td class="text-end subtotal">{{ '%.2f' | format(item.item_price * item.item_quantity) }}</td>
@@ -66,7 +72,12 @@
                         {% endfor %}
                         {% if not items %}
                         <tr>
-                            <td><input type="text" name="item_name[]" class="form-control" required></td>
+                            <td>
+                                <select name="item_id[]" class="form-select item-select">
+                                    <option value="">— custom —</option>
+                                </select>
+                            </td>
+                            <td><input type="text" name="item_name[]" class="form-control item-name" required></td>
                             <td><input type="number" name="item_price[]" class="form-control item-price" step="0.01" min="0" required></td>
                             <td><input type="number" name="item_quantity[]" class="form-control item-qty" value="1" min="1" required></td>
                             <td class="text-end subtotal">0.00</td>
@@ -76,7 +87,7 @@
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="3" class="text-end fw-bold">Total</td>
+                            <td colspan="4" class="text-end fw-bold">Total</td>
                             <td class="text-end fw-bold" id="grand-total">0.00</td>
                             <td></td>
                         </tr>
@@ -94,6 +105,33 @@
 </form>
 
 <script>
+    const ITEMS = {{ items_json | safe }};
+
+    function populateSelect(select, selectedId) {
+        select.innerHTML = '<option value="">— custom —</option>';
+        ITEMS.forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = item.id;
+            opt.textContent = `${item.name} (${item.price.toFixed(2)})`;
+            if (selectedId && parseInt(selectedId) === item.id) opt.selected = true;
+            select.appendChild(opt);
+        });
+    }
+
+    function bindRow(row, selectedId) {
+        const select = row.querySelector('.item-select');
+        populateSelect(select, selectedId);
+
+        select.addEventListener('change', () => {
+            const item = ITEMS.find(i => i.id === parseInt(select.value));
+            if (item) {
+                row.querySelector('.item-name').value = item.name;
+                row.querySelector('.item-price').value = item.price.toFixed(2);
+            }
+            updateTotals();
+        });
+    }
+
     function rowSubtotal(row) {
         const price = parseFloat(row.querySelector('.item-price').value) || 0;
         const qty = parseInt(row.querySelector('.item-qty').value) || 0;
@@ -113,7 +151,8 @@
     function newRow() {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td><input type="text" name="item_name[]" class="form-control" required></td>
+            <td><select name="item_id[]" class="form-select item-select"></select></td>
+            <td><input type="text" name="item_name[]" class="form-control item-name" required></td>
             <td><input type="number" name="item_price[]" class="form-control item-price" step="0.01" min="0" required></td>
             <td><input type="number" name="item_quantity[]" class="form-control item-qty" value="1" min="1" required></td>
             <td class="text-end subtotal">0.00</td>
@@ -121,22 +160,32 @@
         return row;
     }
 
+    // Init existing rows
+    document.querySelectorAll('#items-body tr').forEach(row => {
+        const select = row.querySelector('.item-select');
+        const currentId = select ? select.dataset.selected : null;
+        bindRow(row, currentId);
+    });
+
     document.getElementById('add-row').addEventListener('click', () => {
-        document.getElementById('items-body').appendChild(newRow());
+        const row = newRow();
+        document.getElementById('items-body').appendChild(row);
+        bindRow(row, null);
         updateTotals();
     });
 
     document.getElementById('items-body').addEventListener('click', e => {
         if (e.target.classList.contains('remove-row')) {
-            const rows = document.querySelectorAll('#items-body tr');
-            if (rows.length > 1) {
+            if (document.querySelectorAll('#items-body tr').length > 1) {
                 e.target.closest('tr').remove();
                 updateTotals();
             }
         }
     });
 
-    document.getElementById('items-body').addEventListener('input', updateTotals);
+    document.getElementById('items-body').addEventListener('input', e => {
+        if (!e.target.classList.contains('item-select')) updateTotals();
+    });
 
     updateTotals();
 </script>
