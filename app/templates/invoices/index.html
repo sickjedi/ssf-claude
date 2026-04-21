@@ -31,6 +31,7 @@
                 <td>{{ '%.2f' | format(invoice.total) }}</td>
                 <td>
                     <a href="{{ url_for('invoices.view', invoice_id=invoice.id) }}" class="btn btn-sm btn-outline-secondary">View</a>
+                    <a href="{{ url_for('invoices.pdf', invoice_id=invoice.id) }}" class="btn btn-sm btn-outline-dark">Download PDF</a>
                     {% if current_user.can_write %}
                     <a href="{{ url_for('invoices.edit', invoice_id=invoice.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
                     {% endif %}
