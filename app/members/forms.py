@@ -2,12 +2,13 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, BooleanField, DateField, TextAreaField, SubmitField, SelectField
 from wtforms.validators import DataRequired, Email, Length, Optional
 from app.models.user import Role
+from app.validators import oib_validator
 
 
 class MemberForm(FlaskForm):
     first_name = StringField('First Name', validators=[DataRequired(), Length(max=100)])
     last_name = StringField('Last Name', validators=[DataRequired(), Length(max=100)])
-    oib = StringField('OIB', validators=[DataRequired(), Length(min=11, max=11)])
+    oib = StringField('OIB', validators=[DataRequired(), oib_validator])
     date_of_birth = DateField('Date of Birth', validators=[DataRequired()])
     address = StringField('Address', validators=[DataRequired(), Length(max=255)])
     phone = StringField('Phone', validators=[DataRequired(), Length(max=50)])

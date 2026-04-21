@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField, SubmitField
 from wtforms.validators import DataRequired, Length, Optional, ValidationError
+from app.validators import oib_validator
 
 
 class CustomerForm(FlaskForm):
@@ -36,5 +37,11 @@ class CustomerForm(FlaskForm):
             if not self.company_oib.data:
                 self.company_oib.errors.append('OIB is required.')
                 ok = False
+            else:
+                try:
+                    oib_validator(self, self.company_oib)
+                except ValidationError as e:
+                    self.company_oib.errors.append(e.args[0])
+                    ok = False
 
         return ok
