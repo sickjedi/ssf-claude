@@ -78,7 +78,6 @@ def edit(customer_id):
         flash(f'Customer {customer.display_name} updated.', 'success')
         return redirect(url_for('customers.view', customer_id=customer.id))
 
-    # Pre-populate form on GET
     form.customer_type.data = customer.customer_type
     if customer.customer_type == 'person':
         form.customer_name.data = customer.customer_name
