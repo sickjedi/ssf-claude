@@ -72,7 +72,8 @@
       "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\ext.sstilinovic\\\\.claude\" | Where-Object {$_.PSIsContainer} | Select-Object Name)",
       "Bash(dir \"C:\\\\Users\\\\ext.sstilinovic\\\\.claude\")",
       "Bash(dir *)",
-      "PowerShell(Get-ChildItem -Path \"C:\\\\Work\\\\Projects\\\\SSF\" -Recurse -Exclude \".venv\", \"__pycache__\", \".git\", \"migrations\", \".pytest_cache\", \".idea\" | Where-Object { $_.Extension -in @\\('.py', '.html'\\) } | Select-Object -ExpandProperty FullName | Sort-Object)"
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Work\\\\Projects\\\\SSF\" -Recurse -Exclude \".venv\", \"__pycache__\", \".git\", \"migrations\", \".pytest_cache\", \".idea\" | Where-Object { $_.Extension -in @\\('.py', '.html'\\) } | Select-Object -ExpandProperty FullName | Sort-Object)",
+      "PowerShell($env:FLASK_DEBUG = \"true\"; Start-Process -FilePath \".venv\\\\Scripts\\\\python.exe\" -ArgumentList \"run.py\" -RedirectStandardOutput \"server_out.txt\" -RedirectStandardError \"server_err.txt\" -WindowStyle Hidden; Start-Sleep -Seconds 3; Get-Content \"server_out.txt\", \"server_err.txt\" -ErrorAction SilentlyContinue)"
     ]
   }
 }
