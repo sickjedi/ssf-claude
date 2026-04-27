@@ -35,7 +35,21 @@
       "PowerShell(Stop-Process *)",
       "Bash(.venv/Scripts/python.exe run.py)",
       "Bash(.venv/Scripts/activate)",
-      "Bash(python run.py)"
+      "Bash(python run.py)",
+      "Bash(.venv\\\\Scripts\\\\activate)",
+      "Bash(flask db *)",
+      "Bash(.venv\\\\Scripts\\\\flask db *)",
+      "Bash(FLASK_APP=run.py .venv/Scripts/flask db migrate -m \"Numeric prices, unique member email\")",
+      "PowerShell(cd \"C:\\\\Work\\\\Projects\\\\SSF\"; $env:FLASK_APP = \"run.py\"; .venv\\\\Scripts\\\\flask.exe db migrate -m \"Numeric prices, unique member email\" 2>&1)",
+      "PowerShell(cd \"C:\\\\Work\\\\Projects\\\\SSF\"; $env:FLASK_APP = \"run.py\"; .venv\\\\Scripts\\\\flask.exe db upgrade 2>&1)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :5000)",
+      "Bash(.venv/Scripts/python.exe *)",
+      "PowerShell(.venv\\\\Scripts\\\\python.exe --version)",
+      "PowerShell(netstat *)",
+      "PowerShell(taskkill *)",
+      "PowerShell(Get-NetTCPConnection *)",
+      "PowerShell($env:FLASK_DEBUG = \"true\"; $proc = Start-Process -FilePath \".venv\\\\Scripts\\\\python.exe\" -ArgumentList \"run.py\" -PassThru -RedirectStandardOutput \"server_out2.txt\" -RedirectStandardError \"server_err2.txt\" -WindowStyle Hidden; Start-Sleep -Seconds 4; Get-Content \"server_out2.txt\" -ErrorAction SilentlyContinue; Get-Content \"server_err2.txt\" -ErrorAction SilentlyContinue)"
     ]
   }
 }

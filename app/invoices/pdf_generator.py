@@ -5,6 +5,13 @@ _FONT_DIR = os.path.join(os.environ.get('WINDIR', os.environ.get('SystemRoot', r
 _ARIAL = os.path.join(_FONT_DIR, 'arial.ttf')
 _ARIAL_B = os.path.join(_FONT_DIR, 'arialbd.ttf')
 
+if not os.path.exists(_ARIAL):
+    raise RuntimeError(
+        f'Arial font not found at {_ARIAL}. '
+        'PDF generation requires Windows Arial fonts (arial.ttf). '
+        'This application is designed to run on Windows only.'
+    )
+
 _NL = {'new_x': XPos.LMARGIN, 'new_y': YPos.NEXT}
 
 

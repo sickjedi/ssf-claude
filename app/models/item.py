@@ -7,7 +7,7 @@ class Item(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     item_name = db.Column(db.String(255), nullable=False)
-    item_price = db.Column(db.Float, nullable=False)
+    item_price = db.Column(db.Numeric(precision=10, scale=2), nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def __repr__(self):

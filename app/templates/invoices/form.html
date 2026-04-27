@@ -109,7 +109,7 @@
 </form>
 
 <script>
-    const ITEMS = {{ items_json | safe }};
+    const ITEMS = {{ items_json | tojson }};
 
     function populateSelect(select, selectedId) {
         select.innerHTML = '<option value="">— custom —</option>';

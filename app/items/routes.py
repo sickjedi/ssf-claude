@@ -21,7 +21,7 @@ def add():
 
     form = ItemForm()
     if form.validate_on_submit():
-        item = Item(item_name=form.item_name.data, item_price=float(form.item_price.data))
+        item = Item(item_name=form.item_name.data, item_price=form.item_price.data)
         db.session.add(item)
         db.session.commit()
         flash(f'Item "{item.item_name}" added.', 'success')
@@ -41,7 +41,7 @@ def edit(item_id):
 
     if form.validate_on_submit():
         item.item_name = form.item_name.data
-        item.item_price = float(form.item_price.data)
+        item.item_price = form.item_price.data
         db.session.commit()
         flash(f'Item "{item.item_name}" updated.', 'success')
         return redirect(url_for('items.index'))

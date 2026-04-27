@@ -12,7 +12,7 @@ class Member(db.Model):
     date_of_birth = db.Column(db.Date, nullable=False)
     address = db.Column(db.String(255), nullable=False)
     phone = db.Column(db.String(50), nullable=False)
-    email_address = db.Column(db.String(255), nullable=False)
+    email_address = db.Column(db.String(255), nullable=False, unique=True)
     gdpr = db.Column(db.Boolean, nullable=False)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     end_date = db.Column(db.Date, nullable=True)
