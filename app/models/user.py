@@ -12,6 +12,10 @@ class Role(enum.Enum):
     SECRETARY = 'secretary'
     VIEWER = 'viewer'
 
+    @property
+    def label(self):
+        return self.value.replace('_', ' ').title()
+
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
@@ -27,6 +31,8 @@ class User(UserMixin, db.Model):
     member = db.relationship('Member', back_populates='user')
 
     def set_password(self, password):
+        if not password or len(password) < 8:
+            raise ValueError('Password must be at least 8 characters.')
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):

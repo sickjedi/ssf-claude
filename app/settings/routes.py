@@ -12,11 +12,16 @@ def edit():
     if not current_user.can_delete:
         abort(403)
 
-    settings = Settings.get()
+    settings = Settings.query.first()
+    if settings is None:
+        settings = Settings()
+
     form = SettingsForm(obj=settings)
 
     if form.validate_on_submit():
         form.populate_obj(settings)
+        if settings.id is None:
+            db.session.add(settings)
         db.session.commit()
         flash('Settings saved.', 'success')
 

@@ -13,9 +13,4 @@ class Settings(db.Model):
 
     @staticmethod
     def get():
-        settings = Settings.query.first()
-        if not settings:
-            settings = Settings()
-            db.session.add(settings)
-            db.session.commit()
-        return settings
+        return Settings.query.first() or Settings()

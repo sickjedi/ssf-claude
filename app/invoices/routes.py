@@ -1,4 +1,4 @@
-import json
+from decimal import Decimal, InvalidOperation
 from flask import render_template, redirect, url_for, flash, abort, request, make_response
 from flask_login import login_required, current_user
 from app import db
@@ -15,11 +15,10 @@ from app.models.user import User, Role
 
 
 def _generate_invoice_number(year):
-    invoices = Invoice.query.filter(Invoice.invoice_number.like(f'%/{year}')).all()
-    if invoices:
-        seq = max(int(inv.invoice_number.split('/')[0]) for inv in invoices) + 1
-    else:
-        seq = 1
+    max_seq = db.session.query(
+        func.max(func.cast(func.split_part(Invoice.invoice_number, '/', 1), db.Integer))
+    ).filter(Invoice.invoice_number.like(f'%/{year}')).scalar()
+    seq = (max_seq or 0) + 1
     return f'{seq:02d}/{year}'
 
 
@@ -28,9 +27,9 @@ def _customer_choices():
     return [(c.id, f'{c.display_name} ({c.customer_type})') for c in customers]
 
 
-def _items_json():
+def _items_data():
     items = Item.query.order_by(Item.item_name).all()
-    return json.dumps([{'id': i.id, 'name': i.item_name, 'price': i.item_price} for i in items])
+    return [{'id': i.id, 'name': i.item_name, 'price': float(i.item_price)} for i in items]
 
 
 def _parse_items():
@@ -38,18 +37,29 @@ def _parse_items():
     names = request.form.getlist('item_name[]')
     prices = request.form.getlist('item_price[]')
     quantities = request.form.getlist('item_quantity[]')
+
+    if len({len(item_ids), len(names), len(prices), len(quantities)}) > 1:
+        flash('Item data was malformed — array lengths do not match.', 'danger')
+        return []
+
     items = []
+    parse_errors = False
     for item_id, name, price, qty in zip(item_ids, names, prices, quantities):
-        if name.strip():
-            try:
-                items.append({
-                    'item_id': int(item_id) if item_id else None,
-                    'item_name': name.strip(),
-                    'item_price': float(price),
-                    'item_quantity': int(qty),
-                })
-            except (ValueError, TypeError):
-                pass
+        if not name.strip():
+            continue
+        try:
+            items.append({
+                'item_id': int(item_id) if item_id else None,
+                'item_name': name.strip(),
+                'item_price': Decimal(price),
+                'item_quantity': int(qty),
+            })
+        except (ValueError, TypeError, InvalidOperation):
+            parse_errors = True
+
+    if parse_errors:
+        flash('Some items could not be parsed and were skipped.', 'warning')
+
     return items
 
 
@@ -93,7 +103,7 @@ def add():
         parsed = _parse_items()
         if not parsed:
             flash('At least one item is required.', 'danger')
-            return render_template('invoices/form.html', form=form, title='Add Invoice', invoice=None, items=[], items_json=_items_json())
+            return render_template('invoices/form.html', form=form, title='Add Invoice', invoice=None, items=[], items_json=_items_data())
 
         invoice = Invoice(
             invoice_number=_generate_invoice_number(form.invoice_date.data.year),
@@ -110,7 +120,7 @@ def add():
         flash(f'Invoice {invoice.invoice_number} created.', 'success')
         return redirect(url_for('invoices.view', invoice_id=invoice.id))
 
-    return render_template('invoices/form.html', form=form, title='Add Invoice', invoice=None, items=[], items_json=_items_json())
+    return render_template('invoices/form.html', form=form, title='Add Invoice', invoice=None, items=[], items_json=_items_data())
 
 
 @bp.route('/<int:invoice_id>')
@@ -136,7 +146,7 @@ def edit(invoice_id):
             flash('At least one item is required.', 'danger')
             existing_items = _invoice_items_data(invoice)
             return render_template('invoices/form.html', form=form, title='Edit Invoice',
-                                   invoice=invoice, items=existing_items, items_json=_items_json())
+                                   invoice=invoice, items=existing_items, items_json=_items_data())
 
         invoice.invoice_date = form.invoice_date.data
         invoice.customer_id = form.customer_id.data
@@ -156,7 +166,7 @@ def edit(invoice_id):
     form.customer_id.data = invoice.customer_id
 
     return render_template('invoices/form.html', form=form, title='Edit Invoice',
-                           invoice=invoice, items=_invoice_items_data(invoice), items_json=_items_json())
+                           invoice=invoice, items=_invoice_items_data(invoice), items_json=_items_data())
 
 
 def _invoice_items_data(invoice):

@@ -24,7 +24,7 @@
             <div class="d-flex align-items-center gap-3">
                 <span class="navbar-text">
                     {{ current_user.member.full_name }}
-                    <span class="badge bg-secondary ms-1">{{ current_user.role.value }}</span>
+                    <span class="badge bg-secondary ms-1">{{ current_user.role.label }}</span>
                 </span>
                 <a class="btn btn-outline-light btn-sm" href="{{ url_for('auth.logout') }}">Logout</a>
             </div>

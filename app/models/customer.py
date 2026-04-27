@@ -32,7 +32,7 @@ class PersonCustomer(Customer):
 
     @property
     def display_name(self):
-        return self.customer_name
+        return self.customer_name or '(No name)'
 
 
 class CompanyCustomer(Customer):
@@ -44,4 +44,4 @@ class CompanyCustomer(Customer):
 
     @property
     def display_name(self):
-        return self.company_name
+        return self.company_name or '(No name)'

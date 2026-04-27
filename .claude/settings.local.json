@@ -35,7 +35,13 @@
       "PowerShell(Stop-Process *)",
       "Bash(.venv/Scripts/python.exe run.py)",
       "Bash(.venv/Scripts/activate)",
-      "Bash(python run.py)"
+      "Bash(python run.py)",
+      "Bash(.venv\\\\Scripts\\\\activate)",
+      "Bash(flask db *)",
+      "Bash(.venv\\\\Scripts\\\\flask db *)",
+      "Bash(FLASK_APP=run.py .venv/Scripts/flask db migrate -m \"Numeric prices, unique member email\")",
+      "PowerShell(cd \"C:\\\\Work\\\\Projects\\\\SSF\"; $env:FLASK_APP = \"run.py\"; .venv\\\\Scripts\\\\flask.exe db migrate -m \"Numeric prices, unique member email\" 2>&1)",
+      "PowerShell(cd \"C:\\\\Work\\\\Projects\\\\SSF\"; $env:FLASK_APP = \"run.py\"; .venv\\\\Scripts\\\\flask.exe db upgrade 2>&1)"
     ]
   }
 }
