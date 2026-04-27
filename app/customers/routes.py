@@ -39,8 +39,10 @@ def add():
                 customer_address=form.customer_address.data or None,
             )
         else:
-            existing = CompanyCustomer.query.filter_by(company_oib=form.company_oib.data).first()
-            if existing:
+            if CompanyCustomer.query.filter_by(company_name=form.company_name.data).first():
+                flash('A company with this name already exists.', 'danger')
+                return render_template('customers/form.html', form=form, title='Add Customer')
+            if CompanyCustomer.query.filter_by(company_oib=form.company_oib.data).first():
                 flash('A company with this OIB already exists.', 'danger')
                 return render_template('customers/form.html', form=form, title='Add Customer')
             customer = CompanyCustomer(
@@ -78,8 +80,12 @@ def edit(customer_id):
             customer.customer_name = form.customer_name.data
             customer.customer_address = form.customer_address.data or None
         else:
-            existing = CompanyCustomer.query.filter_by(company_oib=form.company_oib.data).first()
-            if existing and existing.id != customer.id:
+            existing_name = CompanyCustomer.query.filter_by(company_name=form.company_name.data).first()
+            if existing_name and existing_name.id != customer.id:
+                flash('A company with this name already exists.', 'danger')
+                return render_template('customers/form.html', form=form, title='Edit Customer', customer=customer)
+            existing_oib = CompanyCustomer.query.filter_by(company_oib=form.company_oib.data).first()
+            if existing_oib and existing_oib.id != customer.id:
                 flash('A company with this OIB already exists.', 'danger')
                 return render_template('customers/form.html', form=form, title='Edit Customer', customer=customer)
             customer.company_name = form.company_name.data

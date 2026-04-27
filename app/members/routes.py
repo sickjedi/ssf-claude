@@ -26,7 +26,7 @@ def _deactivation_errors(form):
 def _role_conflict(role, exclude_user_id=None):
     if role not in _UNIQUE_ROLES:
         return None
-    q = User.query.filter_by(role=role)
+    q = User.query.filter_by(role=role, is_active=True)
     if exclude_user_id:
         q = q.filter(User.id != exclude_user_id)
     return q.first()

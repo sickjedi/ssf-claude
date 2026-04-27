@@ -24,7 +24,10 @@
                     </div>
                     <div class="mb-3">
                         {{ form.oib.label(class="form-label") }}
-                        {{ form.oib(class="form-control", maxlength=11) }}
+                        {{ form.oib(class="form-control" + (" is-invalid" if form.oib.errors else ""), maxlength=11) }}
+                        {% for error in form.oib.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
                     </div>
                     <div class="mb-3">
                         {{ form.iban.label(class="form-label") }}
