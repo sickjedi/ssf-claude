@@ -68,7 +68,6 @@ def add():
         abort(403)
 
     form = MemberForm()
-    form.is_active.data = True if form.is_active.data is None else form.is_active.data
 
     if form.validate_on_submit():
         if _deactivation_errors(form):
@@ -133,8 +132,8 @@ def edit(member_id):
             flash('A member with this email address already exists.', 'danger')
             return render_template('members/form.html', form=form, title='Edit Member', member=member)
 
-        form.populate_obj(member)
-
+        # Validate all user/role changes before mutating the model
+        new_role = None
         if current_user.can_delete:
             if member.user:
                 new_role = Role(form.user_role.data)
@@ -142,8 +141,6 @@ def edit(member_id):
                 if conflict:
                     flash(f'Role {new_role.label} is already assigned to {conflict.member.full_name}.', 'danger')
                     return render_template('members/form.html', form=form, title='Edit Member', member=member)
-                member.user.role = new_role
-                member.user.is_active = form.user_is_active.data
             elif form.new_user_email.data:
                 if User.query.filter_by(email=form.new_user_email.data.lower()).first():
                     flash('A user with this email already exists.', 'danger')
@@ -156,6 +153,15 @@ def edit(member_id):
                 if conflict:
                     flash(f'Role {new_role.label} is already assigned to {conflict.member.full_name}.', 'danger')
                     return render_template('members/form.html', form=form, title='Edit Member', member=member)
+
+        # All validation passed — now mutate
+        form.populate_obj(member)
+
+        if current_user.can_delete and new_role:
+            if member.user:
+                member.user.role = new_role
+                member.user.is_active = form.user_is_active.data
+            elif form.new_user_email.data:
                 new_user = User(
                     email=form.new_user_email.data.lower(),
                     role=new_role,

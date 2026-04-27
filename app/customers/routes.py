@@ -96,14 +96,17 @@ def edit(customer_id):
         flash(f'Customer {customer.display_name} updated.', 'success')
         return redirect(url_for('customers.view', customer_id=customer.id))
 
+    # Always lock the type — it cannot be changed after creation
     form.customer_type.data = customer.customer_type
-    if customer.customer_type == 'person':
-        form.customer_name.data = customer.customer_name
-        form.customer_address.data = customer.customer_address
-    else:
-        form.company_name.data = customer.company_name
-        form.company_address.data = customer.company_address
-        form.company_oib.data = customer.company_oib
+    # Pre-populate other fields only on GET; on POST keep what the user submitted
+    if request.method == 'GET':
+        if customer.customer_type == 'person':
+            form.customer_name.data = customer.customer_name
+            form.customer_address.data = customer.customer_address
+        else:
+            form.company_name.data = customer.company_name
+            form.company_address.data = customer.company_address
+            form.company_oib.data = customer.company_oib
 
     return render_template('customers/form.html', form=form, title='Edit Customer', customer=customer)
 

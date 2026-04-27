@@ -1,17 +1,20 @@
 from decimal import Decimal, InvalidOperation
 from flask import render_template, redirect, url_for, flash, abort, request, make_response
 from flask_login import login_required, current_user
+from sqlalchemy import func
+from sqlalchemy.orm import joinedload, subqueryload
 from app import db
 from app.invoices import bp
 from app.invoices.forms import InvoiceForm
 from app.invoices.pdf_generator import generate_invoice_pdf
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
-from sqlalchemy import func
 from app.models.customer import Customer, PersonCustomer, CompanyCustomer
 from app.models.item import Item
 from app.models.settings import Settings
 from app.models.user import User, Role
+
+_INVOICE_LOAD_OPTIONS = [joinedload(Invoice.customer), subqueryload(Invoice.items)]
 
 
 def _generate_invoice_number(year):
@@ -40,7 +43,7 @@ def _parse_items():
 
     if len({len(item_ids), len(names), len(prices), len(quantities)}) > 1:
         flash('Item data was malformed — array lengths do not match.', 'danger')
-        return []
+        return None  # None signals the error was already flashed; [] means no items
 
     items = []
     parse_errors = False
@@ -71,19 +74,19 @@ def index():
     desc = direction == 'desc'
 
     if sort == 'total':
-        invoices = Invoice.query.all()
+        invoices = Invoice.query.options(*_INVOICE_LOAD_OPTIONS).all()
         invoices.sort(key=lambda inv: inv.total, reverse=desc)
     elif sort == 'number':
-        invoices = Invoice.query.order_by(
+        invoices = Invoice.query.options(*_INVOICE_LOAD_OPTIONS).order_by(
             Invoice.invoice_number.desc() if desc else Invoice.invoice_number.asc()
         ).all()
     elif sort == 'customer':
         name_col = func.coalesce(PersonCustomer.customer_name, CompanyCustomer.company_name)
-        invoices = Invoice.query.join(Customer, Invoice.customer_id == Customer.id).order_by(
-            name_col.desc() if desc else name_col.asc()
-        ).all()
+        invoices = Invoice.query.options(*_INVOICE_LOAD_OPTIONS).join(
+            Customer, Invoice.customer_id == Customer.id
+        ).order_by(name_col.desc() if desc else name_col.asc()).all()
     else:  # date (default)
-        invoices = Invoice.query.order_by(
+        invoices = Invoice.query.options(*_INVOICE_LOAD_OPTIONS).order_by(
             Invoice.invoice_date.desc() if desc else Invoice.invoice_date.asc()
         ).all()
 
@@ -101,6 +104,8 @@ def add():
 
     if form.validate_on_submit():
         parsed = _parse_items()
+        if parsed is None:
+            return render_template('invoices/form.html', form=form, title='Add Invoice', invoice=None, items=[], items_json=_items_data())
         if not parsed:
             flash('At least one item is required.', 'danger')
             return render_template('invoices/form.html', form=form, title='Add Invoice', invoice=None, items=[], items_json=_items_data())
@@ -142,11 +147,13 @@ def edit(invoice_id):
 
     if form.validate_on_submit():
         parsed = _parse_items()
+        if parsed is None:
+            return render_template('invoices/form.html', form=form, title='Edit Invoice',
+                                   invoice=invoice, items=_invoice_items_data(invoice), items_json=_items_data())
         if not parsed:
             flash('At least one item is required.', 'danger')
-            existing_items = _invoice_items_data(invoice)
             return render_template('invoices/form.html', form=form, title='Edit Invoice',
-                                   invoice=invoice, items=existing_items, items_json=_items_data())
+                                   invoice=invoice, items=_invoice_items_data(invoice), items_json=_items_data())
 
         invoice.invoice_date = form.invoice_date.data
         invoice.customer_id = form.customer_id.data

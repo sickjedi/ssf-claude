@@ -14,7 +14,7 @@ class MemberForm(FlaskForm):
     phone = StringField('Phone', validators=[DataRequired(), Length(max=50)])
     email_address = StringField('Email', validators=[DataRequired(), Email(), Length(max=255)])
     gdpr = BooleanField('GDPR Consent', validators=[DataRequired(message='GDPR consent is required.')])
-    is_active = BooleanField('Active')
+    is_active = BooleanField('Active', default=True)
     end_date = DateField('End Date', validators=[Optional()])
     end_reason = TextAreaField('End Reason', validators=[Optional(), Length(max=500)])
     # Existing user account — rendered when member already has a user
