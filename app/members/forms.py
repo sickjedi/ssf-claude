@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, BooleanField, DateField, TextAreaField, SubmitField, SelectField
+from wtforms import StringField, PasswordField, BooleanField, DateField, TextAreaField, SubmitField, SelectField
 from wtforms.validators import DataRequired, Email, Length, Optional
 from app.models.user import Role
 from app.validators import oib_validator
@@ -22,6 +22,6 @@ class MemberForm(FlaskForm):
     user_is_active = BooleanField('User Account Active')
     # New user account — rendered when member has no user
     new_user_email = StringField('Email', validators=[Optional(), Email(), Length(max=255)])
-    new_user_password = StringField('Password', validators=[Optional(), Length(min=8, max=128)])
+    new_user_password = PasswordField('Password', validators=[Optional(), Length(min=8, max=128)])
     new_user_role = SelectField('Role', choices=[(r.value, r.label) for r in Role], validators=[Optional()])
     submit = SubmitField('Save')

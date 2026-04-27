@@ -17,7 +17,12 @@
 
                     <div class="mb-3">
                         {{ form.customer_type.label(class="form-label") }}
+                        {% if customer %}
+                        <input type="hidden" name="customer_type" value="{{ customer.customer_type }}">
+                        {{ form.customer_type(class="form-select", id="customer_type", disabled=True) }}
+                        {% else %}
                         {{ form.customer_type(class="form-select", id="customer_type") }}
+                        {% endif %}
                     </div>
 
                     <div id="person-fields">

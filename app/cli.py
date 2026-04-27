@@ -13,17 +13,17 @@ from app.models.user import User, Role
 @click.option('--date-of-birth', prompt=True, help='YYYY-MM-DD')
 @click.option('--address', prompt=True)
 @click.option('--phone', prompt=True)
-@click.option('--member-email', prompt=True)
-@click.option('--email', prompt=True)
+@click.option('--member-email', prompt='Member contact email')
+@click.option('--login-email', prompt='Login email (for user account)')
 @click.option('--password', prompt=True, hide_input=True, confirmation_prompt=True)
 @click.option('--role', prompt=True,
               type=click.Choice([r.value for r in Role], case_sensitive=False),
               default='admin')
 def create_user(first_name, last_name, oib, date_of_birth, address, phone,
-                member_email, email, password, role):
+                member_email, login_email, password, role):
     """Create a new member with a user account."""
-    if User.query.filter_by(email=email.lower()).first():
-        click.echo(f'Error: user {email} already exists.')
+    if User.query.filter_by(email=login_email.lower()).first():
+        click.echo(f'Error: user {login_email} already exists.')
         return
 
     if Member.query.filter_by(oib=oib).first():
@@ -58,9 +58,9 @@ def create_user(first_name, last_name, oib, date_of_birth, address, phone,
     db.session.add(member)
     db.session.flush()
 
-    user = User(email=email.lower(), role=Role(role), member=member)
+    user = User(email=login_email.lower(), role=Role(role), member=member)
     user.set_password(password)
     db.session.add(user)
     db.session.commit()
 
-    click.echo(f'Created user {email} with role [{role}].')
+    click.echo(f'Created user {login_email} with role [{role}].')

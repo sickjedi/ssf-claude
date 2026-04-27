@@ -4,3 +4,82 @@ Press CTRL+C to quit
  * Restarting with stat
  * Debugger is active!
  * Debugger PIN: 873-538-783
+ * Detected change in 'C:\\Work\\Projects\\SSF\\app\\members\\routes.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 873-538-783
+ * Detected change in 'C:\\Work\\Projects\\SSF\\app\\customers\\routes.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 873-538-783
+ * Detected change in 'C:\\Work\\Projects\\SSF\\app\\customers\\routes.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 873-538-783
+ * Detected change in 'C:\\Work\\Projects\\SSF\\app\\members\\forms.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 873-538-783
+ * Detected change in 'C:\\Work\\Projects\\SSF\\app\\members\\routes.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 873-538-783
+ * Detected change in 'C:\\Work\\Projects\\SSF\\app\\members\\routes.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 873-538-783
+ * Detected change in 'C:\\Work\\Projects\\SSF\\app\\customers\\routes.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 873-538-783
+ * Detected change in 'C:\\Work\\Projects\\SSF\\app\\invoices\\routes.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 873-538-783
+ * Detected change in 'C:\\Work\\Projects\\SSF\\app\\invoices\\routes.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 873-538-783
+ * Detected change in 'C:\\Work\\Projects\\SSF\\app\\invoices\\routes.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 873-538-783
+ * Detected change in 'C:\\Work\\Projects\\SSF\\app\\invoices\\routes.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 873-538-783
+ * Detected change in 'C:\\Work\\Projects\\SSF\\app\\invoices\\routes.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 873-538-783
+127.0.0.1 - - [27/Apr/2026 10:40:11] "GET /invoices/ HTTP/1.1" 200 -
+127.0.0.1 - - [27/Apr/2026 10:40:11] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [27/Apr/2026 10:40:12] "GET /invoices/ HTTP/1.1" 200 -
+127.0.0.1 - - [27/Apr/2026 10:40:12] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [27/Apr/2026 10:40:16] "GET /members/ HTTP/1.1" 200 -
+127.0.0.1 - - [27/Apr/2026 10:40:16] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [27/Apr/2026 10:40:19] "GET /customers/ HTTP/1.1" 200 -
+127.0.0.1 - - [27/Apr/2026 10:40:19] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [27/Apr/2026 10:40:21] "GET /invoices/ HTTP/1.1" 200 -
+127.0.0.1 - - [27/Apr/2026 10:40:21] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [27/Apr/2026 10:40:23] "GET /invoices/?sort=customer&dir=asc HTTP/1.1" 200 -
+127.0.0.1 - - [27/Apr/2026 10:40:23] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [27/Apr/2026 10:40:24] "GET /invoices/?sort=customer&dir=desc HTTP/1.1" 200 -
+127.0.0.1 - - [27/Apr/2026 10:40:24] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [27/Apr/2026 10:40:26] "GET /settings/ HTTP/1.1" 200 -
+127.0.0.1 - - [27/Apr/2026 10:40:26] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [27/Apr/2026 10:40:26] "GET /items/ HTTP/1.1" 200 -
+127.0.0.1 - - [27/Apr/2026 10:40:26] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [27/Apr/2026 10:40:28] "GET /invoices/ HTTP/1.1" 200 -
+127.0.0.1 - - [27/Apr/2026 10:40:28] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [27/Apr/2026 10:40:29] "GET /invoices/add HTTP/1.1" 200 -
+127.0.0.1 - - [27/Apr/2026 10:40:29] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [27/Apr/2026 10:40:33] "GET /invoices/ HTTP/1.1" 200 -
+127.0.0.1 - - [27/Apr/2026 10:40:33] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [27/Apr/2026 10:40:34] "GET /members/ HTTP/1.1" 200 -
+127.0.0.1 - - [27/Apr/2026 10:40:34] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [27/Apr/2026 10:40:36] "GET /members/add HTTP/1.1" 200 -
+127.0.0.1 - - [27/Apr/2026 10:40:36] "GET /static/css/style.css HTTP/1.1" 304 -
+127.0.0.1 - - [27/Apr/2026 10:40:41] "GET /members/ HTTP/1.1" 200 -
+127.0.0.1 - - [27/Apr/2026 10:40:41] "GET /static/css/style.css HTTP/1.1" 304 -
+ * Detected change in 'C:\\Work\\Projects\\SSF\\app\\members\\forms.py', reloading
