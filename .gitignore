@@ -258,3 +258,4 @@ cython_debug/
 # Audit logs
 logs/
 
+/server_err.txt
