@@ -15,8 +15,14 @@
     <table class="table table-hover align-middle">
         <thead class="table-light">
             <tr>
-                <th>Name</th>
-                <th>Type</th>
+                {% for key, label in [('name', 'Name'), ('type', 'Type')] %}
+                {% set next_dir = 'desc' if (sort == key and direction == 'asc') else 'asc' %}
+                <th>
+                    <a href="{{ url_for('customers.index', sort=key, dir=next_dir) }}" class="text-decoration-none text-dark">
+                        {{ label }}{% if sort == key %} {{ '▲' if direction == 'asc' else '▼' }}{% endif %}
+                    </a>
+                </th>
+                {% endfor %}
                 <th>Actions</th>
             </tr>
         </thead>

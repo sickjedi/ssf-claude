@@ -1,5 +1,6 @@
-from flask import render_template, redirect, url_for, flash, abort
+from flask import render_template, redirect, url_for, flash, abort, request
 from flask_login import login_required, current_user
+from sqlalchemy import func
 from app import db
 from app.customers import bp
 from app.customers.forms import CustomerForm
@@ -9,8 +10,19 @@ from app.models.customer import Customer, PersonCustomer, CompanyCustomer
 @bp.route('/')
 @login_required
 def index():
-    customers = Customer.query.order_by(Customer.customer_type).all()
-    return render_template('customers/index.html', customers=customers)
+    sort = request.args.get('sort', 'name')
+    direction = request.args.get('dir', 'asc')
+    desc = direction == 'desc'
+
+    q = Customer.query
+    if sort == 'type':
+        q = q.order_by(Customer.customer_type.desc() if desc else Customer.customer_type.asc())
+    else:  # name (default)
+        name_col = func.coalesce(PersonCustomer.customer_name, CompanyCustomer.company_name)
+        q = q.order_by(name_col.desc() if desc else name_col.asc())
+
+    customers = q.all()
+    return render_template('customers/index.html', customers=customers, sort=sort, direction=direction)
 
 
 @bp.route('/add', methods=['GET', 'POST'])

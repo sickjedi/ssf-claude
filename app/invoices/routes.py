@@ -7,7 +7,8 @@ from app.invoices.forms import InvoiceForm
 from app.invoices.pdf_generator import generate_invoice_pdf
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
-from app.models.customer import Customer
+from sqlalchemy import func
+from app.models.customer import Customer, PersonCustomer, CompanyCustomer
 from app.models.item import Item
 from app.models.settings import Settings
 from app.models.user import User, Role
@@ -55,8 +56,28 @@ def _parse_items():
 @bp.route('/')
 @login_required
 def index():
-    invoices = Invoice.query.order_by(Invoice.invoice_date.desc()).all()
-    return render_template('invoices/index.html', invoices=invoices)
+    sort = request.args.get('sort', 'date')
+    direction = request.args.get('dir', 'desc')
+    desc = direction == 'desc'
+
+    if sort == 'total':
+        invoices = Invoice.query.all()
+        invoices.sort(key=lambda inv: inv.total, reverse=desc)
+    elif sort == 'number':
+        invoices = Invoice.query.order_by(
+            Invoice.invoice_number.desc() if desc else Invoice.invoice_number.asc()
+        ).all()
+    elif sort == 'customer':
+        name_col = func.coalesce(PersonCustomer.customer_name, CompanyCustomer.company_name)
+        invoices = Invoice.query.join(Customer, Invoice.customer_id == Customer.id).order_by(
+            name_col.desc() if desc else name_col.asc()
+        ).all()
+    else:  # date (default)
+        invoices = Invoice.query.order_by(
+            Invoice.invoice_date.desc() if desc else Invoice.invoice_date.asc()
+        ).all()
+
+    return render_template('invoices/index.html', invoices=invoices, sort=sort, direction=direction)
 
 
 @bp.route('/add', methods=['GET', 'POST'])
