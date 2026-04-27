@@ -1,6 +1,7 @@
 from flask import render_template, redirect, url_for, flash, abort, request
 from flask_login import login_required, current_user
 from app import db
+from app.audit import log_action
 from app.members import bp
 from app.members.forms import MemberForm
 from app.models.member import Member
@@ -96,6 +97,7 @@ def add():
         )
         db.session.add(member)
         db.session.commit()
+        log_action('CREATE', 'Member', f'Added member {member.full_name} (ID: {member.id})')
         flash(f'Member {member.full_name} added successfully.', 'success')
         return redirect(url_for('members.index'))
 
@@ -172,6 +174,7 @@ def edit(member_id):
                 db.session.add(new_user)
 
         db.session.commit()
+        log_action('UPDATE', 'Member', f'Updated member {member.full_name} (ID: {member.id})')
         flash(f'Member {member.full_name} updated successfully.', 'success')
         return redirect(url_for('members.view', member_id=member.id))
 
@@ -195,7 +198,9 @@ def delete(member_id):
         return redirect(url_for('members.view', member_id=member.id))
 
     name = member.full_name
+    member_id = member.id
     db.session.delete(member)
     db.session.commit()
+    log_action('DELETE', 'Member', f'Deleted member {name} (ID: {member_id})')
     flash(f'Member {name} deleted.', 'success')
     return redirect(url_for('members.index'))

@@ -4,6 +4,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload, subqueryload
 from app import db
+from app.audit import log_action
 from app.invoices import bp
 from app.invoices.forms import InvoiceForm
 from app.invoices.pdf_generator import generate_invoice_pdf
@@ -122,6 +123,7 @@ def add():
             db.session.add(InvoiceItem(invoice_id=invoice.id, **item_data))
 
         db.session.commit()
+        log_action('CREATE', 'Invoice', f'Created invoice {invoice.invoice_number} (ID: {invoice.id})')
         flash(f'Invoice {invoice.invoice_number} created.', 'success')
         return redirect(url_for('invoices.view', invoice_id=invoice.id))
 
@@ -166,6 +168,7 @@ def edit(invoice_id):
             db.session.add(InvoiceItem(invoice_id=invoice.id, **item_data))
 
         db.session.commit()
+        log_action('UPDATE', 'Invoice', f'Updated invoice {invoice.invoice_number} (ID: {invoice.id})')
         flash(f'Invoice {invoice.invoice_number} updated.', 'success')
         return redirect(url_for('invoices.view', invoice_id=invoice.id))
 
@@ -207,7 +210,9 @@ def delete(invoice_id):
 
     invoice = db.session.get(Invoice, invoice_id) or abort(404)
     number = invoice.invoice_number
+    inv_id = invoice.id
     db.session.delete(invoice)
     db.session.commit()
+    log_action('DELETE', 'Invoice', f'Deleted invoice {number} (ID: {inv_id})')
     flash(f'Invoice {number} deleted.', 'success')
     return redirect(url_for('invoices.index'))

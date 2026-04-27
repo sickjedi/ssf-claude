@@ -2,6 +2,7 @@ from flask import render_template, redirect, url_for, flash, abort, request
 from flask_login import login_required, current_user
 from sqlalchemy import func
 from app import db
+from app.audit import log_action
 from app.customers import bp
 from app.customers.forms import CustomerForm
 from app.models.customer import Customer, PersonCustomer, CompanyCustomer
@@ -53,6 +54,7 @@ def add():
 
         db.session.add(customer)
         db.session.commit()
+        log_action('CREATE', 'Customer', f'Added {customer.customer_type} {customer.display_name} (ID: {customer.id})')
         flash(f'Customer {customer.display_name} added.', 'success')
         return redirect(url_for('customers.index'))
 
@@ -93,6 +95,7 @@ def edit(customer_id):
             customer.company_oib = form.company_oib.data
 
         db.session.commit()
+        log_action('UPDATE', 'Customer', f'Updated {customer.customer_type} {customer.display_name} (ID: {customer.id})')
         flash(f'Customer {customer.display_name} updated.', 'success')
         return redirect(url_for('customers.view', customer_id=customer.id))
 
@@ -124,7 +127,9 @@ def delete(customer_id):
         return redirect(url_for('customers.view', customer_id=customer.id))
 
     name = customer.display_name
+    customer_id = customer.id
     db.session.delete(customer)
     db.session.commit()
+    log_action('DELETE', 'Customer', f'Deleted customer {name} (ID: {customer_id})')
     flash(f'Customer {name} deleted.', 'success')
     return redirect(url_for('customers.index'))

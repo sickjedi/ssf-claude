@@ -1,6 +1,7 @@
 from urllib.parse import urlparse, urljoin
 from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
+from app.audit import log_action
 from app.auth import bp
 from app.auth.forms import LoginForm
 from app.models.user import User
@@ -25,6 +26,7 @@ def login():
             return redirect(url_for('auth.login'))
 
         login_user(user, remember=form.remember_me.data)
+        log_action('LOGIN', 'User', f'Login: {user.email}')
         next_page = request.args.get('next')
         if next_page and not _is_safe_redirect(next_page):
             next_page = None
@@ -36,5 +38,6 @@ def login():
 @bp.route('/logout')
 @login_required
 def logout():
+    log_action('LOGOUT', 'User', f'Logout: {current_user.email}')
     logout_user()
     return redirect(url_for('auth.login'))

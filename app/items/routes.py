@@ -1,6 +1,7 @@
 from flask import render_template, redirect, url_for, flash, abort
 from flask_login import login_required, current_user
 from app import db
+from app.audit import log_action
 from app.items import bp
 from app.items.forms import ItemForm
 from app.models.item import Item
@@ -24,6 +25,7 @@ def add():
         item = Item(item_name=form.item_name.data, item_price=form.item_price.data)
         db.session.add(item)
         db.session.commit()
+        log_action('CREATE', 'Item', f'Added item "{item.item_name}" (ID: {item.id})')
         flash(f'Item "{item.item_name}" added.', 'success')
         return redirect(url_for('items.index'))
 
@@ -43,6 +45,7 @@ def edit(item_id):
         item.item_name = form.item_name.data
         item.item_price = form.item_price.data
         db.session.commit()
+        log_action('UPDATE', 'Item', f'Updated item "{item.item_name}" (ID: {item.id})')
         flash(f'Item "{item.item_name}" updated.', 'success')
         return redirect(url_for('items.index'))
 
@@ -57,7 +60,9 @@ def delete(item_id):
 
     item = db.session.get(Item, item_id) or abort(404)
     name = item.item_name
+    item_id = item.id
     db.session.delete(item)
     db.session.commit()
+    log_action('DELETE', 'Item', f'Deleted item "{name}" (ID: {item_id})')
     flash(f'Item "{name}" deleted.', 'success')
     return redirect(url_for('items.index'))
