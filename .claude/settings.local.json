@@ -49,7 +49,11 @@
       "PowerShell(netstat *)",
       "PowerShell(taskkill *)",
       "PowerShell(Get-NetTCPConnection *)",
-      "PowerShell($env:FLASK_DEBUG = \"true\"; $proc = Start-Process -FilePath \".venv\\\\Scripts\\\\python.exe\" -ArgumentList \"run.py\" -PassThru -RedirectStandardOutput \"server_out2.txt\" -RedirectStandardError \"server_err2.txt\" -WindowStyle Hidden; Start-Sleep -Seconds 4; Get-Content \"server_out2.txt\" -ErrorAction SilentlyContinue; Get-Content \"server_err2.txt\" -ErrorAction SilentlyContinue)"
+      "PowerShell($env:FLASK_DEBUG = \"true\"; $proc = Start-Process -FilePath \".venv\\\\Scripts\\\\python.exe\" -ArgumentList \"run.py\" -PassThru -RedirectStandardOutput \"server_out2.txt\" -RedirectStandardError \"server_err2.txt\" -WindowStyle Hidden; Start-Sleep -Seconds 4; Get-Content \"server_out2.txt\" -ErrorAction SilentlyContinue; Get-Content \"server_err2.txt\" -ErrorAction SilentlyContinue)",
+      "Bash(.venv/Scripts/python *)",
+      "Bash(echo \"Exit: $?\")",
+      "Bash(cmd *)",
+      "PowerShell(.venv\\\\Scripts\\\\python.exe -m pytest tests/ -v --tb=short)"
     ]
   }
 }
