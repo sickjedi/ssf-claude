@@ -33,7 +33,9 @@
       "Bash(.venv/Scripts/python.exe -m flask run)",
       "PowerShell(Test-NetConnection *)",
       "PowerShell(Stop-Process *)",
-      "Bash(.venv/Scripts/python.exe run.py)"
+      "Bash(.venv/Scripts/python.exe run.py)",
+      "Bash(.venv/Scripts/activate)",
+      "Bash(python run.py)"
     ]
   }
 }

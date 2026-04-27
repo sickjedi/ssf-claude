@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash, abort
+from flask import render_template, redirect, url_for, flash, abort, request
 from flask_login import login_required, current_user
 from app import db
 from app.members import bp
@@ -35,8 +35,30 @@ def _role_conflict(role, exclude_user_id=None):
 @bp.route('/')
 @login_required
 def index():
-    members = Member.query.order_by(Member.last_name, Member.first_name).all()
-    return render_template('members/index.html', members=members)
+    sort = request.args.get('sort', 'name')
+    direction = request.args.get('dir', 'asc')
+    desc = direction == 'desc'
+
+    q = Member.query
+    if sort == 'role':
+        q = q.outerjoin(User, User.member_id == Member.id)
+        q = q.order_by(User.role.desc() if desc else User.role.asc())
+    elif sort == 'oib':
+        q = q.order_by(Member.oib.desc() if desc else Member.oib.asc())
+    elif sort == 'email':
+        q = q.order_by(Member.email_address.desc() if desc else Member.email_address.asc())
+    elif sort == 'phone':
+        q = q.order_by(Member.phone.desc() if desc else Member.phone.asc())
+    elif sort == 'status':
+        q = q.order_by(Member.is_active.desc() if desc else Member.is_active.asc())
+    else:
+        if desc:
+            q = q.order_by(Member.last_name.desc(), Member.first_name.desc())
+        else:
+            q = q.order_by(Member.last_name.asc(), Member.first_name.asc())
+
+    members = q.all()
+    return render_template('members/index.html', members=members, sort=sort, direction=direction)
 
 
 @bp.route('/add', methods=['GET', 'POST'])
