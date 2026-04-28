@@ -3,6 +3,8 @@ You are a QA/QC agent for the SSF NGO management Flask project. Your job depends
 - `tests` — run the automated test suite and report results
 - `write` — detect recently changed source files and write new unit tests
 - `full test document` — generate a manual QA scenarios document
+- `by feature` — generate one QA scenarios document per feature area
+- `update` — compare app source to existing by-feature scenarios and add any missing coverage
 - _(blank)_ — run all three modes in order
 
 The argument is: **$ARGUMENTS**
@@ -248,3 +250,108 @@ del qa_scenarios\_gen.py
 ### Step 4 — Report
 
 Report the output path and the total number of scenarios written.
+
+---
+
+## Mode: by feature
+
+Generate one manual QA scenarios Word file per feature area. Each file covers a single section of the application and is saved to `qa_scenarios/<feature>.docx`.
+
+### Step 1 — Ensure python-docx is available
+
+Run:
+```
+.venv\Scripts\pip.exe show python-docx
+```
+If it is not installed, run:
+```
+.venv\Scripts\pip.exe install python-docx
+```
+
+### Step 2 — Build the scenario content
+
+Use the same 8 sections and scenarios defined in the `full test document` mode above. Compose the full scenario content (preconditions, steps, expected result) for each scenario in each section.
+
+### Step 3 — Write one .docx per section
+
+Write a Python script to a temporary file `qa_scenarios/_gen_split.py` that uses `python-docx` to produce one document per section. For each section the script must:
+
+1. Create a new `Document()`
+2. Add a title: `"SSF QA — <Section Name>"`
+3. Add a subtitle with today's date
+4. For each scenario within the section:
+   - Heading level 1 for the scenario name
+   - Bold label "Preconditions:" followed by the text as a normal paragraph
+   - Bold label "Steps:" followed by each step as a numbered list (use `add_paragraph(text, style='List Number')`)
+   - Bold label "Expected result:" followed by the text as a normal paragraph
+5. Save to `qa_scenarios/<snake_case_section_name>.docx` using these exact filenames:
+   - Authentication → `authentication.docx`
+   - Member management → `member_management.docx`
+   - User & role management → `user_role_management.docx`
+   - Customer management → `customer_management.docx`
+   - Invoice management → `invoice_management.docx`
+   - Item catalog → `item_catalog.docx`
+   - Settings → `settings.docx`
+   - Permission matrix → `permission_matrix.docx`
+6. Print `OK: <filename>` after each file is written
+
+Populate the script with the full scenario content — do not leave placeholders.
+
+Then run:
+```
+.venv\Scripts\python.exe qa_scenarios/_gen_split.py
+```
+
+Then delete the temporary script:
+```
+del qa_scenarios\_gen_split.py
+```
+
+### Step 4 — Report
+
+Report all 8 output files created and the total number of scenarios written across all files.
+
+---
+
+## Mode: update
+
+Compare the current app source code against the existing scenario list in `qa.md` and add any missing coverage to the `by feature` documents.
+
+### Step 1 — Read the app source
+
+Read every route file under `app/` (`app/auth/routes.py`, `app/members/routes.py`, `app/customers/routes.py`, `app/invoices/routes.py`, `app/items/routes.py`, `app/settings/routes.py`) in full. Build a list of all distinct user-facing features, actions, and validation rules exposed by each blueprint.
+
+### Step 2 — Read the existing scenario list
+
+Read `C:\Work\Projects\SSF\.claude\commands\qa.md` — specifically the `## Mode: by feature` section — and extract every scenario name already listed under each of the 8 section headings.
+
+### Step 3 — Identify gaps
+
+For each feature, action, or validation rule found in the code, check whether a corresponding scenario exists in the list from Step 2. A scenario is considered covered if an existing item clearly describes that feature or edge case. Flag anything with no matching scenario.
+
+### Step 4 — Compose new scenarios
+
+For each gap, write a new scenario with:
+- A clear scenario name
+- Preconditions (one line)
+- Numbered steps
+- Expected result (one line)
+
+Assign each new scenario to the correct section (Authentication, Member management, User & role management, Customer management, Invoice management, Item catalog, Settings, Permission matrix).
+
+### Step 5 — Update `qa.md`
+
+Edit `C:\Work\Projects\SSF\.claude\commands\qa.md`: append the new scenario names as bullet points under the correct section inside `## Mode: by feature`. Do not remove or reorder existing scenarios.
+
+### Step 6 — Regenerate affected `.docx` files
+
+Write a temporary Python script `qa_scenarios/_gen_update.py` using `python-docx` that regenerates only the `.docx` files for the sections that received new scenarios. Use the same format as `by feature` (title `"SSF QA — <Section Name>"`, today's date subtitle, Heading 1 per scenario, bold Preconditions / Steps / Expected result). Run it, then delete it:
+
+```
+.venv\Scripts\python.exe qa_scenarios/_gen_update.py
+del qa_scenarios\_gen_update.py
+```
+
+### Step 7 — Report
+
+List every new scenario added, which `.docx` file it was written to, and the total count. If no gaps were found, report "Coverage is up to date — no new scenarios needed."
