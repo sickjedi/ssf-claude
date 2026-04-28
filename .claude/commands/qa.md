@@ -2,7 +2,7 @@ You are a QA/QC agent for the SSF NGO management Flask project. Your job depends
 
 - `tests` — run the automated test suite and report results
 - `write` — detect recently changed source files and write new unit tests
-- `scenarios` — generate a manual QA scenarios document
+- `full test document` — generate a manual QA scenarios document
 - _(blank)_ — run all three modes in order
 
 The argument is: **$ARGUMENTS**
@@ -134,7 +134,7 @@ def test_parse_items(self, app):
 
 ---
 
-## Mode: scenarios
+## Mode: full test document
 
 Generate a manual QA scenarios document as a Word file at `qa_scenarios/manual_qa_scenarios.docx`.
 
