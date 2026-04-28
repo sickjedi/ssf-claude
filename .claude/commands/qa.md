@@ -138,7 +138,7 @@ def test_parse_items(self, app):
 
 ## Mode: full test document
 
-Generate a manual QA scenarios document as a Word file at `qa_scenarios/manual_qa_scenarios.docx`.
+Generate a manual QA scenarios document as a Word file at `qa_full_test/manual_full_test_scenario.docx`.
 
 ### Step 1 — Ensure python-docx is available
 
@@ -232,7 +232,7 @@ Write a Python script to a temporary file `qa_scenarios/_gen.py` that uses `pyth
    - Bold label "Preconditions:" followed by the text as a normal paragraph
    - Bold label "Steps:" followed by each step as a numbered list (use `add_paragraph(text, style='List Number')`)
    - Bold label "Expected result:" followed by the text as a normal paragraph
-6. Save to `qa_scenarios/manual_qa_scenarios.docx`
+6. Save to `qa_full_test_scenario/manual_full_test_scenario.docx`
 7. Print `OK` when done
 
 Populate the script with the full scenario content you composed in Step 2 — do not leave placeholders.

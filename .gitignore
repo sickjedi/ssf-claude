@@ -259,4 +259,5 @@ cython_debug/
 logs/
 
 /server_err.txt!/
-qa_scenarios/
+/qa_scenarios/
+/qa_full_test_scenario/
