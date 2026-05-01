@@ -1,15 +1,19 @@
 import os
 from fpdf import FPDF, XPos, YPos
 
-_FONT_DIR = os.path.join(os.environ.get('WINDIR', os.environ.get('SystemRoot', r'C:\Windows')), 'Fonts')
-_ARIAL = os.path.join(_FONT_DIR, 'arial.ttf')
-_ARIAL_B = os.path.join(_FONT_DIR, 'arialbd.ttf')
+_WINDOWS_FONT_DIR = os.path.join(os.environ.get('WINDIR', os.environ.get('SystemRoot', r'C:\Windows')), 'Fonts')
+_LIBERATION_FONT_DIR = '/usr/share/fonts/truetype/liberation'
 
-if not os.path.exists(_ARIAL):
+if os.path.exists(os.path.join(_WINDOWS_FONT_DIR, 'arial.ttf')):
+    _ARIAL = os.path.join(_WINDOWS_FONT_DIR, 'arial.ttf')
+    _ARIAL_B = os.path.join(_WINDOWS_FONT_DIR, 'arialbd.ttf')
+elif os.path.exists(os.path.join(_LIBERATION_FONT_DIR, 'LiberationSans-Regular.ttf')):
+    _ARIAL = os.path.join(_LIBERATION_FONT_DIR, 'LiberationSans-Regular.ttf')
+    _ARIAL_B = os.path.join(_LIBERATION_FONT_DIR, 'LiberationSans-Bold.ttf')
+else:
     raise RuntimeError(
-        f'Arial font not found at {_ARIAL}. '
-        'PDF generation requires Windows Arial fonts (arial.ttf). '
-        'This application is designed to run on Windows only.'
+        'No suitable font found for PDF generation. '
+        'Install Liberation Sans (linux) or ensure Arial is available (windows).'
     )
 
 _NL = {'new_x': XPos.LMARGIN, 'new_y': YPos.NEXT}
