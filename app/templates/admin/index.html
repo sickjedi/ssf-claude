@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Admin — Organisations - SSF{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Organisations</h2>
+    <a href="{{ url_for('admin.add_org') }}" class="btn btn-primary">Add Organisation</a>
+</div>
+
+{% if active_tenant_id %}
+<div class="alert alert-warning d-flex justify-content-between align-items-center">
+    <span>You are currently viewing a tenant's data. Return to admin to manage all organisations.</span>
+    <form method="POST" action="{{ url_for('admin.clear_tenant') }}" class="ms-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-sm btn-outline-dark">Exit Tenant View</button>
+    </form>
+</div>
+{% endif %}
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>OIB</th>
+                    <th>City</th>
+                    <th>IBAN</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for org in orgs %}
+                <tr {% if active_tenant_id == org.id %}class="table-info"{% endif %}>
+                    <td>{{ org.name }}</td>
+                    <td>{{ org.oib }}</td>
+                    <td>{{ org.city or '—' }}</td>
+                    <td>{{ org.iban or '—' }}</td>
+                    <td>
+                        {% if org.is_active %}
+                        <span class="badge bg-success">Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ url_for('admin.edit_org', org_id=org.id) }}" class="btn btn-sm btn-outline-secondary me-1">Edit</a>
+                        <form method="POST" action="{{ url_for('admin.switch_tenant', org_id=org.id) }}" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-primary">View Data</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">No organisations yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

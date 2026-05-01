@@ -6,6 +6,7 @@ from app import db, login_manager
 
 
 class Role(enum.Enum):
+    SUPER_ADMIN = 'super_admin'
     ADMIN = 'admin'
     PRESIDENT = 'president'
     VICE_PRESIDENT = 'vice_president'
@@ -27,7 +28,7 @@ class User(UserMixin, db.Model):
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
-    member_id = db.Column(db.Integer, db.ForeignKey('members.id'), unique=True, nullable=False)
+    member_id = db.Column(db.Integer, db.ForeignKey('members.id'), unique=True, nullable=True)
     member = db.relationship('Member', back_populates='user')
 
     def set_password(self, password):
@@ -39,12 +40,17 @@ class User(UserMixin, db.Model):
         return check_password_hash(self.password_hash, password)
 
     @property
+    def can_super_admin(self):
+        return self.role == Role.SUPER_ADMIN
+
+    @property
     def can_delete(self):
-        return self.role in (Role.ADMIN, Role.PRESIDENT)
+        return self.role in (Role.SUPER_ADMIN, Role.ADMIN, Role.PRESIDENT)
 
     @property
     def can_write(self):
-        return self.role in (Role.ADMIN, Role.PRESIDENT, Role.VICE_PRESIDENT, Role.SECRETARY)
+        return self.role in (Role.SUPER_ADMIN, Role.ADMIN, Role.PRESIDENT,
+                             Role.VICE_PRESIDENT, Role.SECRETARY)
 
     def __repr__(self):
         return f'<User {self.email} [{self.role.value}]>'

@@ -9,6 +9,8 @@ class Customer(db.Model):
     customer_type = db.Column(db.String(20), nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
+    organisation_id = db.Column(db.Integer, db.ForeignKey('organisations.id'), nullable=False)
+    organisation = db.relationship('Organisation', back_populates='customers')
     invoices = db.relationship('Invoice', back_populates='customer', lazy='select')
 
     __mapper_args__ = {
@@ -36,9 +38,9 @@ class PersonCustomer(Customer):
 
 
 class CompanyCustomer(Customer):
-    company_name = db.Column(db.String(255), nullable=True, unique=True)
+    company_name = db.Column(db.String(255), nullable=True)
     company_address = db.Column(db.String(255), nullable=True)
-    company_oib = db.Column(db.String(11), nullable=True, unique=True)
+    company_oib = db.Column(db.String(11), nullable=True)
 
     __mapper_args__ = {'polymorphic_identity': 'company'}
 

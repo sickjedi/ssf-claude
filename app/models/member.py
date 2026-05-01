@@ -8,17 +8,19 @@ class Member(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(100), nullable=False)
     last_name = db.Column(db.String(100), nullable=False)
-    oib = db.Column(db.String(11), nullable=False, unique=True)
+    oib = db.Column(db.String(11), nullable=False)
     date_of_birth = db.Column(db.Date, nullable=False)
     address = db.Column(db.String(255), nullable=False)
     phone = db.Column(db.String(50), nullable=False)
-    email_address = db.Column(db.String(255), nullable=False, unique=True)
+    email_address = db.Column(db.String(255), nullable=False)
     gdpr = db.Column(db.Boolean, nullable=False)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     end_date = db.Column(db.Date, nullable=True)
     end_reason = db.Column(db.String(500), nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
+    organisation_id = db.Column(db.Integer, db.ForeignKey('organisations.id'), nullable=False)
+    organisation = db.relationship('Organisation', back_populates='members')
     user = db.relationship('User', back_populates='member', uselist=False)
 
     @property

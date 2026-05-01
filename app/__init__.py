@@ -78,10 +78,16 @@ def create_app(config_class=Config):
     from app.settings import bp as settings_bp
     app.register_blueprint(settings_bp, url_prefix='/settings')
 
+    from app.admin import bp as admin_bp
+    app.register_blueprint(admin_bp, url_prefix='/admin')
+
+    from app.tenant import init_tenant
+    init_tenant(app)
+
     _setup_audit_logging(app)
 
     with app.app_context():
-        from app.cli import create_user  # noqa: F401
+        from app.cli import create_user, create_org  # noqa: F401
 
     @app.route('/')
     def index():

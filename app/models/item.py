@@ -10,5 +10,8 @@ class Item(db.Model):
     item_price = db.Column(db.Numeric(precision=10, scale=2), nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
+    organisation_id = db.Column(db.Integer, db.ForeignKey('organisations.id'), nullable=False)
+    organisation = db.relationship('Organisation', back_populates='items')
+
     def __repr__(self):
         return f'<Item {self.item_name}>'

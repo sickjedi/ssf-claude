@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash, abort, request
+from flask import render_template, redirect, url_for, flash, abort, request, g
 from flask_login import login_required, current_user
 from app import db
 from app.audit import log_action
@@ -6,6 +6,7 @@ from app.members import bp
 from app.members.forms import MemberForm
 from app.models.member import Member
 from app.models.user import User, Role
+from app.tenant import require_tenant
 
 
 _UNIQUE_ROLES = {Role.PRESIDENT, Role.VICE_PRESIDENT, Role.SECRETARY}
@@ -27,7 +28,11 @@ def _deactivation_errors(form):
 def _role_conflict(role, exclude_user_id=None):
     if role not in _UNIQUE_ROLES:
         return None
-    q = User.query.filter_by(role=role, is_active=True)
+    q = (User.query
+         .join(Member, User.member_id == Member.id)
+         .filter(Member.organisation_id == g.tenant.id,
+                 User.role == role,
+                 User.is_active == True))
     if exclude_user_id:
         q = q.filter(User.id != exclude_user_id)
     return q.first()
@@ -36,11 +41,12 @@ def _role_conflict(role, exclude_user_id=None):
 @bp.route('/')
 @login_required
 def index():
+    require_tenant()
     sort = request.args.get('sort', 'name')
     direction = request.args.get('dir', 'asc')
     desc = direction == 'desc'
 
-    q = Member.query
+    q = Member.query.filter_by(organisation_id=g.tenant.id)
     if sort == 'role':
         q = q.outerjoin(User, User.member_id == Member.id)
         q = q.order_by(User.role.desc() if desc else User.role.asc())
@@ -67,6 +73,7 @@ def index():
 def add():
     if not current_user.can_write:
         abort(403)
+    require_tenant()
 
     form = MemberForm()
 
@@ -74,11 +81,11 @@ def add():
         if _deactivation_errors(form):
             return render_template('members/form.html', form=form, title='Add Member')
 
-        if Member.query.filter_by(oib=form.oib.data).first():
+        if Member.query.filter_by(oib=form.oib.data, organisation_id=g.tenant.id).first():
             flash('A member with this OIB already exists.', 'danger')
             return render_template('members/form.html', form=form, title='Add Member')
 
-        if Member.query.filter_by(email_address=form.email_address.data).first():
+        if Member.query.filter_by(email_address=form.email_address.data, organisation_id=g.tenant.id).first():
             flash('A member with this email address already exists.', 'danger')
             return render_template('members/form.html', form=form, title='Add Member')
 
@@ -94,6 +101,7 @@ def add():
             is_active=form.is_active.data,
             end_date=form.end_date.data,
             end_reason=form.end_reason.data,
+            organisation_id=g.tenant.id,
         )
         db.session.add(member)
         db.session.commit()
@@ -107,7 +115,10 @@ def add():
 @bp.route('/<int:member_id>')
 @login_required
 def view(member_id):
-    member = db.session.get(Member, member_id) or abort(404)
+    require_tenant()
+    member = db.session.get(Member, member_id)
+    if member is None or member.organisation_id != g.tenant.id:
+        abort(404)
     return render_template('members/view.html', member=member)
 
 
@@ -116,20 +127,23 @@ def view(member_id):
 def edit(member_id):
     if not current_user.can_write:
         abort(403)
+    require_tenant()
 
-    member = db.session.get(Member, member_id) or abort(404)
+    member = db.session.get(Member, member_id)
+    if member is None or member.organisation_id != g.tenant.id:
+        abort(404)
     form = MemberForm(obj=member)
 
     if form.validate_on_submit():
         if _deactivation_errors(form):
             return render_template('members/form.html', form=form, title='Edit Member', member=member)
 
-        existing = Member.query.filter_by(oib=form.oib.data).first()
+        existing = Member.query.filter_by(oib=form.oib.data, organisation_id=g.tenant.id).first()
         if existing and existing.id != member.id:
             flash('A member with this OIB already exists.', 'danger')
             return render_template('members/form.html', form=form, title='Edit Member', member=member)
 
-        existing_email = Member.query.filter_by(email_address=form.email_address.data).first()
+        existing_email = Member.query.filter_by(email_address=form.email_address.data, organisation_id=g.tenant.id).first()
         if existing_email and existing_email.id != member.id:
             flash('A member with this email address already exists.', 'danger')
             return render_template('members/form.html', form=form, title='Edit Member', member=member)
@@ -190,17 +204,20 @@ def edit(member_id):
 def delete(member_id):
     if not current_user.can_delete:
         abort(403)
+    require_tenant()
 
-    member = db.session.get(Member, member_id) or abort(404)
+    member = db.session.get(Member, member_id)
+    if member is None or member.organisation_id != g.tenant.id:
+        abort(404)
 
     if member.user:
         flash('Cannot delete a member who has a user account. Remove the user account first.', 'danger')
         return redirect(url_for('members.view', member_id=member.id))
 
     name = member.full_name
-    member_id = member.id
+    mid = member.id
     db.session.delete(member)
     db.session.commit()
-    log_action('DELETE', 'Member', f'Deleted member {name} (ID: {member_id})')
+    log_action('DELETE', 'Member', f'Deleted member {name} (ID: {mid})')
     flash(f'Member {name} deleted.', 'success')
     return redirect(url_for('members.index'))

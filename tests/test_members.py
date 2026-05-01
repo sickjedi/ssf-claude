@@ -1,9 +1,10 @@
 import pytest
 from datetime import date
+from flask import g
 from app import db as _db
 from app.models.user import User, Role
 from app.members.routes import _deactivation_errors, _role_conflict
-from tests.conftest import make_member
+from tests.conftest import make_member, make_org
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -22,8 +23,8 @@ class _DeactivationForm:
         self.end_reason = _Field(end_reason)
 
 
-def _persist_user(oib, email, role, is_active=True):
-    m = make_member(oib=oib, email_address=email)
+def _persist_user(oib, email, role, org_id, is_active=True):
+    m = make_member(oib=oib, email_address=email, organisation_id=org_id)
     _db.session.add(m)
     _db.session.flush()
     u = User(email=email, role=role, is_active=is_active, member=m)
@@ -77,33 +78,59 @@ class TestDeactivationErrors:
 # ── _role_conflict ────────────────────────────────────────────────────────────
 
 class TestRoleConflict:
-    def test_no_users_no_conflict(self):
-        assert _role_conflict(Role.PRESIDENT) is None
+    def test_no_users_no_conflict(self, app, org):
+        with app.test_request_context():
+            g.tenant = org
+            assert _role_conflict(Role.PRESIDENT) is None
 
-    def test_finds_active_president(self):
-        u = _persist_user('12345678903', 'a@test.com', Role.PRESIDENT)
-        assert _role_conflict(Role.PRESIDENT).id == u.id
+    def test_finds_active_president(self, app, org):
+        u = _persist_user('12345678903', 'a@test.com', Role.PRESIDENT, org.id)
+        with app.test_request_context():
+            g.tenant = org
+            assert _role_conflict(Role.PRESIDENT).id == u.id
 
-    def test_finds_active_vice_president(self):
-        u = _persist_user('12345678903', 'a@test.com', Role.VICE_PRESIDENT)
-        assert _role_conflict(Role.VICE_PRESIDENT).id == u.id
+    def test_finds_active_vice_president(self, app, org):
+        u = _persist_user('12345678903', 'a@test.com', Role.VICE_PRESIDENT, org.id)
+        with app.test_request_context():
+            g.tenant = org
+            assert _role_conflict(Role.VICE_PRESIDENT).id == u.id
 
-    def test_finds_active_secretary(self):
-        u = _persist_user('12345678903', 'a@test.com', Role.SECRETARY)
-        assert _role_conflict(Role.SECRETARY).id == u.id
+    def test_finds_active_secretary(self, app, org):
+        u = _persist_user('12345678903', 'a@test.com', Role.SECRETARY, org.id)
+        with app.test_request_context():
+            g.tenant = org
+            assert _role_conflict(Role.SECRETARY).id == u.id
 
-    def test_inactive_user_ignored(self):
-        _persist_user('12345678903', 'a@test.com', Role.PRESIDENT, is_active=False)
-        assert _role_conflict(Role.PRESIDENT) is None
+    def test_inactive_user_ignored(self, app, org):
+        _persist_user('12345678903', 'a@test.com', Role.PRESIDENT, org.id, is_active=False)
+        with app.test_request_context():
+            g.tenant = org
+            assert _role_conflict(Role.PRESIDENT) is None
 
-    def test_excludes_own_user_id(self):
-        u = _persist_user('12345678903', 'a@test.com', Role.PRESIDENT)
-        assert _role_conflict(Role.PRESIDENT, exclude_user_id=u.id) is None
+    def test_excludes_own_user_id(self, app, org):
+        u = _persist_user('12345678903', 'a@test.com', Role.PRESIDENT, org.id)
+        with app.test_request_context():
+            g.tenant = org
+            assert _role_conflict(Role.PRESIDENT, exclude_user_id=u.id) is None
 
-    def test_admin_never_conflicts(self):
-        _persist_user('12345678903', 'a@test.com', Role.ADMIN)
-        assert _role_conflict(Role.ADMIN) is None
+    def test_admin_never_conflicts(self, app, org):
+        _persist_user('12345678903', 'a@test.com', Role.ADMIN, org.id)
+        with app.test_request_context():
+            g.tenant = org
+            assert _role_conflict(Role.ADMIN) is None
 
-    def test_viewer_never_conflicts(self):
-        _persist_user('12345678903', 'a@test.com', Role.VIEWER)
-        assert _role_conflict(Role.VIEWER) is None
+    def test_viewer_never_conflicts(self, app, org):
+        _persist_user('12345678903', 'a@test.com', Role.VIEWER, org.id)
+        with app.test_request_context():
+            g.tenant = org
+            assert _role_conflict(Role.VIEWER) is None
+
+    def test_conflict_scoped_to_org(self, app, org):
+        """A president in another org does not conflict with this org."""
+        other_org = make_org(name='Other Org', oib='98765432109')
+        _db.session.add(other_org)
+        _db.session.commit()
+        _persist_user('12345678903', 'a@test.com', Role.PRESIDENT, other_org.id)
+        with app.test_request_context():
+            g.tenant = org
+            assert _role_conflict(Role.PRESIDENT) is None

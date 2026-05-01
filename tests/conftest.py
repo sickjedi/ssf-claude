@@ -8,6 +8,7 @@ import pytest
 from datetime import date
 from app import create_app, db as _db
 from app.models.member import Member
+from app.models.organisation import Organisation
 
 
 class TestConfig:
@@ -42,6 +43,21 @@ def clean_tables(app):
 @pytest.fixture
 def client(app):
     return app.test_client()
+
+
+@pytest.fixture
+def org(app):
+    o = make_org()
+    _db.session.add(o)
+    _db.session.commit()
+    return o
+
+
+def make_org(**kwargs) -> Organisation:
+    """Return an unsaved Organisation with sensible defaults."""
+    defaults = dict(name='Test Organisation', oib='12345678903')
+    defaults.update(kwargs)
+    return Organisation(**defaults)
 
 
 def make_member(**kwargs) -> Member:

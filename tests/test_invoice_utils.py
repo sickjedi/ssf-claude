@@ -1,6 +1,7 @@
 import pytest
 from decimal import Decimal
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
+from flask import g
 from app.invoices.routes import _parse_items, _generate_invoice_number
 
 
@@ -116,27 +117,43 @@ def _mock_db_max(return_value):
 
 
 class TestGenerateInvoiceNumber:
+    def _ctx(self, app, scalar_return):
+        """Return a context manager that sets g.tenant and mocks db."""
+        mock_tenant = MagicMock()
+        mock_tenant.id = 1
+
+        class _Ctx:
+            def __enter__(self_):
+                self_._req_ctx = app.test_request_context()
+                self_._req_ctx.__enter__()
+                g.tenant = mock_tenant
+                self_._patch = patch('app.invoices.routes.db')
+                mock_db = self_._patch.__enter__()
+                mock_db.session.query.return_value.filter.return_value.scalar.return_value = scalar_return
+                return mock_db
+
+            def __exit__(self_, *args):
+                self_._patch.__exit__(*args)
+                self_._req_ctx.__exit__(*args)
+
+        return _Ctx()
+
     def test_first_invoice_of_year(self, app):
-        with patch('app.invoices.routes.db') as mock_db:
-            mock_db.session.query.return_value.filter.return_value.scalar.return_value = None
+        with self._ctx(app, None):
             assert _generate_invoice_number(2026) == '01/2026'
 
     def test_increments_from_existing_max(self, app):
-        with patch('app.invoices.routes.db') as mock_db:
-            mock_db.session.query.return_value.filter.return_value.scalar.return_value = 5
+        with self._ctx(app, 5):
             assert _generate_invoice_number(2026) == '06/2026'
 
     def test_zero_max_treated_as_no_invoices(self, app):
-        with patch('app.invoices.routes.db') as mock_db:
-            mock_db.session.query.return_value.filter.return_value.scalar.return_value = 0
+        with self._ctx(app, 0):
             assert _generate_invoice_number(2026) == '01/2026'
 
     def test_uses_provided_year(self, app):
-        with patch('app.invoices.routes.db') as mock_db:
-            mock_db.session.query.return_value.filter.return_value.scalar.return_value = None
+        with self._ctx(app, None):
             assert _generate_invoice_number(2025) == '01/2025'
 
     def test_sequence_beyond_two_digits(self, app):
-        with patch('app.invoices.routes.db') as mock_db:
-            mock_db.session.query.return_value.filter.return_value.scalar.return_value = 99
+        with self._ctx(app, 99):
             assert _generate_invoice_number(2026) == '100/2026'

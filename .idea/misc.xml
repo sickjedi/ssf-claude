@@ -3,7 +3,7 @@
   <component name="Black">
     <option name="sdkName" value="Python 3.13 (SSF)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.13 (SSF)" project-jdk-type="Python SDK">
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.14 (ssf-claude)" project-jdk-type="Python SDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>
 </project>

@@ -13,6 +13,10 @@
         <div class="container">
             <a class="navbar-brand fw-bold" href="{{ url_for('members.index') }}">SSF</a>
             <div class="navbar-nav me-auto">
+                {% if current_user.can_super_admin %}
+                <a class="nav-link" href="{{ url_for('admin.index') }}">Admin</a>
+                {% endif %}
+                {% if g.tenant %}
                 <a class="nav-link" href="{{ url_for('members.index') }}">Members</a>
                 <a class="nav-link" href="{{ url_for('customers.index') }}">Customers</a>
                 <a class="nav-link" href="{{ url_for('invoices.index') }}">Invoices</a>
@@ -20,10 +24,18 @@
                 {% if current_user.can_delete %}
                 <a class="nav-link" href="{{ url_for('settings.edit') }}">Settings</a>
                 {% endif %}
+                {% endif %}
             </div>
             <div class="d-flex align-items-center gap-3">
+                {% if current_user.can_super_admin and g.tenant %}
+                <span class="badge bg-warning text-dark">Viewing: {{ g.tenant.name }}</span>
+                {% endif %}
                 <span class="navbar-text">
+                    {% if current_user.member %}
                     {{ current_user.member.full_name }}
+                    {% else %}
+                    Super Admin
+                    {% endif %}
                     <span class="badge bg-secondary ms-1">{{ current_user.role.label }}</span>
                 </span>
                 <a class="btn btn-outline-light btn-sm" href="{{ url_for('auth.logout') }}">Logout</a>

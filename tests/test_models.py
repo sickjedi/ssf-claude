@@ -4,7 +4,8 @@ from app import db as _db
 from app.models.user import User, Role
 from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
-from app.models.settings import Settings
+from app.models.organisation import Organisation
+from tests.conftest import make_org
 
 
 # ── Role.label ────────────────────────────────────────────────────────────────
@@ -25,11 +26,14 @@ class TestRoleLabel:
     def test_viewer(self):
         assert Role.VIEWER.label == 'Viewer'
 
+    def test_super_admin(self):
+        assert Role.SUPER_ADMIN.label == 'Super Admin'
 
-# ── User.can_delete / can_write ───────────────────────────────────────────────
+
+# ── User.can_delete / can_write / can_super_admin ─────────────────────────────
 
 class TestUserPermissions:
-    @pytest.mark.parametrize('role', [Role.ADMIN, Role.PRESIDENT])
+    @pytest.mark.parametrize('role', [Role.SUPER_ADMIN, Role.ADMIN, Role.PRESIDENT])
     def test_can_delete_true(self, role):
         assert User(role=role).can_delete is True
 
@@ -37,12 +41,20 @@ class TestUserPermissions:
     def test_can_delete_false(self, role):
         assert User(role=role).can_delete is False
 
-    @pytest.mark.parametrize('role', [Role.ADMIN, Role.PRESIDENT, Role.VICE_PRESIDENT, Role.SECRETARY])
+    @pytest.mark.parametrize('role', [Role.SUPER_ADMIN, Role.ADMIN, Role.PRESIDENT,
+                                       Role.VICE_PRESIDENT, Role.SECRETARY])
     def test_can_write_true(self, role):
         assert User(role=role).can_write is True
 
     def test_viewer_cannot_write(self):
         assert User(role=Role.VIEWER).can_write is False
+
+    def test_super_admin_can_super_admin(self):
+        assert User(role=Role.SUPER_ADMIN).can_super_admin is True
+
+    @pytest.mark.parametrize('role', [Role.ADMIN, Role.PRESIDENT, Role.VIEWER])
+    def test_others_cannot_super_admin(self, role):
+        assert User(role=role).can_super_admin is False
 
 
 # ── InvoiceItem.subtotal ──────────────────────────────────────────────────────
@@ -83,22 +95,30 @@ class TestInvoiceTotal:
         assert invoice.total == Decimal('100.00')
 
 
-# ── Settings.get ──────────────────────────────────────────────────────────────
+# ── Organisation ──────────────────────────────────────────────────────────────
 
-class TestSettingsGet:
-    def test_returns_transient_instance_when_table_empty(self):
-        s = Settings.get()
-        assert s.id is None
-
-    def test_does_not_persist_on_read(self):
-        Settings.get()
-        assert Settings.query.count() == 0
-
-    def test_returns_existing_row(self):
-        saved = Settings(name='Test Org')
-        _db.session.add(saved)
+class TestOrganisation:
+    def test_saves_and_retrieves(self, app):
+        org = make_org(name='Tvornica Znanosti', oib='12345678903')
+        _db.session.add(org)
         _db.session.commit()
 
-        result = Settings.get()
-        assert result.id == saved.id
-        assert result.name == 'Test Org'
+        fetched = _db.session.get(Organisation, org.id)
+        assert fetched.name == 'Tvornica Znanosti'
+        assert fetched.oib == '12345678903'
+        assert fetched.is_active is True
+
+    def test_oib_must_be_unique(self, app):
+        from sqlalchemy.exc import IntegrityError
+        _db.session.add(make_org(oib='12345678903'))
+        _db.session.commit()
+        _db.session.add(make_org(name='Another Org', oib='12345678903'))
+        with pytest.raises(IntegrityError):
+            _db.session.commit()
+        _db.session.rollback()
+
+    def test_different_orgs_can_have_same_name(self, app):
+        _db.session.add(make_org(name='Same Name', oib='12345678903'))
+        _db.session.add(make_org(name='Same Name', oib='98765432109'))
+        _db.session.commit()
+        assert Organisation.query.filter_by(name='Same Name').count() == 2

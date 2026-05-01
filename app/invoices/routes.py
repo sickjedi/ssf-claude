@@ -1,5 +1,5 @@
 from decimal import Decimal, InvalidOperation
-from flask import render_template, redirect, url_for, flash, abort, request, make_response
+from flask import render_template, redirect, url_for, flash, abort, request, make_response, g
 from flask_login import login_required, current_user
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload, subqueryload
@@ -12,8 +12,9 @@ from app.models.invoice import Invoice
 from app.models.invoice_item import InvoiceItem
 from app.models.customer import Customer, PersonCustomer, CompanyCustomer
 from app.models.item import Item
-from app.models.settings import Settings
+from app.models.member import Member
 from app.models.user import User, Role
+from app.tenant import require_tenant
 
 _INVOICE_LOAD_OPTIONS = [joinedload(Invoice.customer), subqueryload(Invoice.items)]
 
@@ -21,18 +22,21 @@ _INVOICE_LOAD_OPTIONS = [joinedload(Invoice.customer), subqueryload(Invoice.item
 def _generate_invoice_number(year):
     max_seq = db.session.query(
         func.max(func.cast(func.split_part(Invoice.invoice_number, '/', 1), db.Integer))
-    ).filter(Invoice.invoice_number.like(f'%/{year}')).scalar()
+    ).filter(
+        Invoice.organisation_id == g.tenant.id,
+        Invoice.invoice_number.like(f'%/{year}')
+    ).scalar()
     seq = (max_seq or 0) + 1
     return f'{seq:02d}/{year}'
 
 
 def _customer_choices():
-    customers = Customer.query.order_by(Customer.customer_type).all()
+    customers = Customer.query.filter_by(organisation_id=g.tenant.id).order_by(Customer.customer_type).all()
     return [(c.id, f'{c.display_name} ({c.customer_type})') for c in customers]
 
 
 def _items_data():
-    items = Item.query.order_by(Item.item_name).all()
+    items = Item.query.filter_by(organisation_id=g.tenant.id).order_by(Item.item_name).all()
     return [{'id': i.id, 'name': i.item_name, 'price': float(i.item_price)} for i in items]
 
 
@@ -70,24 +74,27 @@ def _parse_items():
 @bp.route('/')
 @login_required
 def index():
+    require_tenant()
     sort = request.args.get('sort', 'date')
     direction = request.args.get('dir', 'desc')
     desc = direction == 'desc'
 
+    base_q = Invoice.query.filter_by(organisation_id=g.tenant.id)
+
     if sort == 'total':
-        invoices = Invoice.query.options(*_INVOICE_LOAD_OPTIONS).all()
+        invoices = base_q.options(*_INVOICE_LOAD_OPTIONS).all()
         invoices.sort(key=lambda inv: inv.total, reverse=desc)
     elif sort == 'number':
-        invoices = Invoice.query.options(*_INVOICE_LOAD_OPTIONS).order_by(
+        invoices = base_q.options(*_INVOICE_LOAD_OPTIONS).order_by(
             Invoice.invoice_number.desc() if desc else Invoice.invoice_number.asc()
         ).all()
     elif sort == 'customer':
         name_col = func.coalesce(PersonCustomer.customer_name, CompanyCustomer.company_name)
-        invoices = Invoice.query.options(*_INVOICE_LOAD_OPTIONS).join(
+        invoices = base_q.options(*_INVOICE_LOAD_OPTIONS).join(
             Customer, Invoice.customer_id == Customer.id
         ).order_by(name_col.desc() if desc else name_col.asc()).all()
     else:  # date (default)
-        invoices = Invoice.query.options(*_INVOICE_LOAD_OPTIONS).order_by(
+        invoices = base_q.options(*_INVOICE_LOAD_OPTIONS).order_by(
             Invoice.invoice_date.desc() if desc else Invoice.invoice_date.asc()
         ).all()
 
@@ -99,6 +106,7 @@ def index():
 def add():
     if not current_user.can_write:
         abort(403)
+    require_tenant()
 
     form = InvoiceForm()
     form.customer_id.choices = _customer_choices()
@@ -115,6 +123,7 @@ def add():
             invoice_number=_generate_invoice_number(form.invoice_date.data.year),
             invoice_date=form.invoice_date.data,
             customer_id=form.customer_id.data,
+            organisation_id=g.tenant.id,
         )
         db.session.add(invoice)
         db.session.flush()
@@ -133,7 +142,10 @@ def add():
 @bp.route('/<int:invoice_id>')
 @login_required
 def view(invoice_id):
-    invoice = db.session.get(Invoice, invoice_id) or abort(404)
+    require_tenant()
+    invoice = db.session.get(Invoice, invoice_id)
+    if invoice is None or invoice.organisation_id != g.tenant.id:
+        abort(404)
     return render_template('invoices/view.html', invoice=invoice)
 
 
@@ -142,8 +154,11 @@ def view(invoice_id):
 def edit(invoice_id):
     if not current_user.can_write:
         abort(403)
+    require_tenant()
 
-    invoice = db.session.get(Invoice, invoice_id) or abort(404)
+    invoice = db.session.get(Invoice, invoice_id)
+    if invoice is None or invoice.organisation_id != g.tenant.id:
+        abort(404)
     form = InvoiceForm()
     form.customer_id.choices = _customer_choices()
 
@@ -188,12 +203,19 @@ def _invoice_items_data(invoice):
 @bp.route('/<int:invoice_id>/pdf')
 @login_required
 def pdf(invoice_id):
-    invoice = db.session.get(Invoice, invoice_id) or abort(404)
-    settings = Settings.get()
-    president = User.query.filter_by(role=Role.PRESIDENT).first()
+    require_tenant()
+    invoice = db.session.get(Invoice, invoice_id)
+    if invoice is None or invoice.organisation_id != g.tenant.id:
+        abort(404)
+
+    president = (User.query
+                 .join(Member, User.member_id == Member.id)
+                 .filter(Member.organisation_id == g.tenant.id,
+                         User.role == Role.PRESIDENT)
+                 .first())
     president_name = president.member.full_name if president else None
 
-    pdf_bytes = generate_invoice_pdf(invoice, settings, president_name)
+    pdf_bytes = generate_invoice_pdf(invoice, g.tenant, president_name)
 
     filename = f'invoice_{invoice.invoice_number.replace("/", "-")}.pdf'
     response = make_response(pdf_bytes)
@@ -207,8 +229,11 @@ def pdf(invoice_id):
 def delete(invoice_id):
     if not current_user.can_delete:
         abort(403)
+    require_tenant()
 
-    invoice = db.session.get(Invoice, invoice_id) or abort(404)
+    invoice = db.session.get(Invoice, invoice_id)
+    if invoice is None or invoice.organisation_id != g.tenant.id:
+        abort(404)
     number = invoice.invoice_number
     inv_id = invoice.id
     db.session.delete(invoice)
