@@ -92,6 +92,11 @@ def create_app(config_class=Config):
     @app.route('/')
     def index():
         from flask import redirect, url_for
+        from flask_login import current_user
+        if current_user.is_authenticated and current_user.can_super_admin:
+            from flask import g
+            if not g.get('tenant'):
+                return redirect(url_for('admin.index'))
         return redirect(url_for('members.index'))
 
     @app.errorhandler(404)

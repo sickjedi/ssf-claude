@@ -53,6 +53,8 @@ def login():
         if user.role != Role.SUPER_ADMIN:
             session['tenant_id'] = org_id
         log_action('LOGIN', 'User', f'Login: {user.email}')
+        if user.role == Role.SUPER_ADMIN:
+            return redirect(url_for('admin.index'))
         next_page = request.args.get('next')
         if next_page and not _is_safe_redirect(next_page):
             next_page = None
