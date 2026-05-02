@@ -5,8 +5,9 @@ from app import db
 from app.admin import bp
 from app.admin.forms import OrganisationAdminForm
 from app.audit import log_action
+from app.models.member import Member
 from app.models.organisation import Organisation
-from app.models.user import Role
+from app.models.user import User, Role
 
 
 def super_admin_required(f):
@@ -16,6 +17,32 @@ def super_admin_required(f):
             abort(403)
         return f(*args, **kwargs)
     return decorated
+
+
+def _first_member_errors(form):
+    if not form.add_first_member.data:
+        return False
+    has_error = False
+    str_fields = [
+        (form.member_first_name, 'First Name'),
+        (form.member_last_name, 'Last Name'),
+        (form.member_oib, 'OIB'),
+        (form.member_address, 'Address'),
+        (form.member_phone, 'Phone'),
+        (form.member_email, 'Email'),
+        (form.user_login_email, 'Login Email'),
+    ]
+    for field, label in str_fields:
+        if not (field.data or '').strip():
+            field.errors.append(f'{label} is required.')
+            has_error = True
+    if not form.member_date_of_birth.data:
+        form.member_date_of_birth.errors.append('Date of Birth is required.')
+        has_error = True
+    if not form.user_password.data:
+        form.user_password.errors.append('Password is required.')
+        has_error = True
+    return has_error
 
 
 @bp.route('/')
@@ -39,6 +66,14 @@ def add_org():
             flash('An organisation with this OIB already exists.', 'danger')
             return render_template('admin/form.html', form=form, title='Add Organisation')
 
+        first_member = form.add_first_member.data
+        if _first_member_errors(form):
+            return render_template('admin/form.html', form=form, title='Add Organisation')
+        if first_member:
+            if User.query.filter_by(email=form.user_login_email.data.strip().lower()).first():
+                form.user_login_email.errors.append('A user with this login email already exists.')
+                return render_template('admin/form.html', form=form, title='Add Organisation')
+
         org = Organisation(
             name=form.name.data,
             oib=form.oib.data,
@@ -48,8 +83,36 @@ def add_org():
             is_active=form.is_active.data,
         )
         db.session.add(org)
+        db.session.flush()
+
+        if first_member:
+            member = Member(
+                first_name=form.member_first_name.data.strip(),
+                last_name=form.member_last_name.data.strip(),
+                oib=form.member_oib.data.strip(),
+                date_of_birth=form.member_date_of_birth.data,
+                address=form.member_address.data.strip(),
+                phone=form.member_phone.data.strip(),
+                email_address=form.member_email.data.strip(),
+                gdpr=True,
+                is_active=True,
+                organisation_id=org.id,
+            )
+            db.session.add(member)
+            db.session.flush()
+            user = User(
+                email=form.user_login_email.data.strip().lower(),
+                role=Role.PRESIDENT,
+                is_active=True,
+                member=member,
+            )
+            user.set_password(form.user_password.data)
+            db.session.add(user)
+
         db.session.commit()
         log_action('CREATE', 'Organisation', f'Created organisation {org.name} (ID: {org.id})')
+        if first_member:
+            log_action('CREATE', 'Member', f'Created first member {member.full_name} (ID: {member.id}) for organisation {org.name}')
         flash(f'Organisation {org.name} created.', 'success')
         return redirect(url_for('admin.index'))
 
