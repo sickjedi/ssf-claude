@@ -47,6 +47,7 @@
                     </td>
                     <td class="text-end">
                         <a href="{{ url_for('admin.edit_org', org_id=org.id) }}" class="btn btn-sm btn-outline-secondary me-1">Edit</a>
+                        <a href="{{ url_for('admin.org_users', org_id=org.id) }}" class="btn btn-sm btn-outline-info me-1">Manage Users</a>
                         <form method="POST" action="{{ url_for('admin.switch_tenant', org_id=org.id) }}" class="d-inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="btn btn-sm btn-outline-primary">View Data</button>

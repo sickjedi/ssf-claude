@@ -1,9 +1,10 @@
 from functools import wraps
 from flask import render_template, redirect, url_for, flash, abort, session
 from flask_login import login_required, current_user
+from sqlalchemy.orm import contains_eager
 from app import db
 from app.admin import bp
-from app.admin.forms import OrganisationAdminForm
+from app.admin.forms import OrganisationAdminForm, ResetPasswordForm
 from app.audit import log_action
 from app.models.member import Member
 from app.models.organisation import Organisation
@@ -139,6 +140,45 @@ def edit_org(org_id):
         return redirect(url_for('admin.index'))
 
     return render_template('admin/form.html', form=form, title='Edit Organisation', org=org)
+
+
+@bp.route('/organisations/<int:org_id>/users')
+@login_required
+@super_admin_required
+def org_users(org_id):
+    org = db.session.get(Organisation, org_id) or abort(404)
+    users = (User.query
+             .join(Member, User.member_id == Member.id)
+             .options(contains_eager(User.member))
+             .filter(Member.organisation_id == org_id)
+             .order_by(Member.last_name, Member.first_name)
+             .all())
+    return render_template('admin/users.html', org=org, users=users)
+
+
+@bp.route('/organisations/<int:org_id>/users/<int:user_id>/reset-password', methods=['GET', 'POST'])
+@login_required
+@super_admin_required
+def reset_user_password(org_id, user_id):
+    org = db.session.get(Organisation, org_id) or abort(404)
+    user = db.session.get(User, user_id) or abort(404)
+    if not user.member or user.member.organisation_id != org_id:
+        abort(404)
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        if form.new_password.data != form.confirm_password.data:
+            form.confirm_password.errors.append('Passwords do not match.')
+            return render_template('admin/reset_password.html', form=form, org=org, user=user)
+        try:
+            user.set_password(form.new_password.data)
+        except ValueError as e:
+            form.new_password.errors.append(str(e))
+            return render_template('admin/reset_password.html', form=form, org=org, user=user)
+        db.session.commit()
+        log_action('UPDATE', 'User', f'Super admin reset password for {user.email} (ID: {user.id})')
+        flash(f'Password reset for {user.member.full_name}.', 'success')
+        return redirect(url_for('admin.org_users', org_id=org_id))
+    return render_template('admin/reset_password.html', form=form, org=org, user=user)
 
 
 @bp.route('/switch-tenant/<int:org_id>', methods=['POST'])

@@ -1,12 +1,12 @@
 import pytest
 from datetime import date
 from app import db as _db
-from app.admin.forms import OrganisationAdminForm
+from app.admin.forms import OrganisationAdminForm, ResetPasswordForm
 from app.models.member import Member
 from app.models.organisation import Organisation
 from app.models.user import User, Role
 from app.admin.routes import _first_member_errors
-from tests.conftest import make_org
+from tests.conftest import make_org, make_member
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -231,3 +231,76 @@ class TestAddOrgWithFirstMember:
             # Route logic: check for duplicate email
             duplicate = User.query.filter_by(email='existing@example.com').first()
             assert duplicate is not None
+
+
+# ── ResetPasswordForm ─────────────────────────────────────────────────────────
+
+class TestResetPasswordForm:
+    _VALID = {'new_password': 'SecurePass1', 'confirm_password': 'SecurePass1'}
+
+    def test_valid_form_passes(self, app):
+        with app.test_request_context('/', method='POST', data=self._VALID):
+            assert ResetPasswordForm().validate() is True
+
+    def test_missing_new_password_fails(self, app):
+        with app.test_request_context('/', method='POST', data={'confirm_password': 'SecurePass1'}):
+            form = ResetPasswordForm()
+            assert form.validate() is False
+            assert form.new_password.errors
+
+    def test_short_new_password_fails(self, app):
+        with app.test_request_context('/', method='POST', data={**self._VALID, 'new_password': 'short'}):
+            form = ResetPasswordForm()
+            assert form.validate() is False
+            assert form.new_password.errors
+
+    def test_missing_confirm_password_fails(self, app):
+        with app.test_request_context('/', method='POST', data={'new_password': 'SecurePass1'}):
+            form = ResetPasswordForm()
+            assert form.validate() is False
+            assert form.confirm_password.errors
+
+
+# ── reset_user_password logic ─────────────────────────────────────────────────
+
+def _make_org_with_user(oib='12345678903', member_oib='98765432109', email='u@test.com', role=Role.PRESIDENT):
+    org = make_org(oib=oib)
+    _db.session.add(org)
+    _db.session.flush()
+    member = make_member(oib=member_oib, email_address=email, organisation_id=org.id)
+    _db.session.add(member)
+    _db.session.flush()
+    user = User(email=email, role=role, is_active=True, member=member)
+    user.set_password('OldPass123!')
+    _db.session.add(user)
+    _db.session.commit()
+    return org, user
+
+
+class TestResetUserPasswordLogic:
+    def test_password_change_persists(self, app):
+        with app.app_context():
+            _, user = _make_org_with_user()
+            user.set_password('NewPass456!')
+            _db.session.commit()
+            refreshed = _db.session.get(User, user.id)
+            assert refreshed.check_password('NewPass456!')
+            assert not refreshed.check_password('OldPass123!')
+
+    def test_set_password_raises_for_short_password(self, app):
+        with app.app_context():
+            _, user = _make_org_with_user()
+            with pytest.raises(ValueError):
+                user.set_password('short')
+
+    def test_set_password_raises_for_empty_password(self, app):
+        with app.app_context():
+            _, user = _make_org_with_user()
+            with pytest.raises(ValueError):
+                user.set_password('')
+
+    def test_idor_check_detects_cross_org_user(self, app):
+        with app.app_context():
+            org_a, _ = _make_org_with_user(oib='12345678903', member_oib='98765432109', email='a@test.com')
+            org_b, user_b = _make_org_with_user(oib='11111111119', member_oib='00000000001', email='b@test.com')
+            assert user_b.member.organisation_id != org_a.id

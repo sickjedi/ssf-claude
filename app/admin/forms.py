@@ -24,3 +24,9 @@ class OrganisationAdminForm(FlaskForm):
     user_password = PasswordField('Password', validators=[Optional(), Length(min=8, max=128)])
 
     submit = SubmitField('Save')
+
+
+class ResetPasswordForm(FlaskForm):
+    new_password = PasswordField('New Password', validators=[DataRequired(), Length(min=8, max=128)])
+    confirm_password = PasswordField('Confirm Password', validators=[DataRequired()])
+    submit = SubmitField('Reset Password')

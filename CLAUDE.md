@@ -62,7 +62,7 @@ app/
 │   ├── invoice.py       # Invoice
 │   ├── invoice_item.py  # InvoiceItem
 │   └── item.py          # Item — pre-defined catalog for invoice line items
-├── admin/               # /admin — super-admin: org CRUD, tenant switching, first-member bootstrap
+├── admin/               # /admin — super-admin: org CRUD, tenant switching, first-member bootstrap, user password reset
 ├── auth/                # /auth — login / logout
 ├── members/             # /members — member CRUD
 ├── customers/           # /customers — customer CRUD
@@ -72,7 +72,7 @@ app/
 ├── settings/            # /settings — org settings (admin only)
 └── templates/
     ├── base.html        # navbar: Members, Customers, Invoices, Items, Settings
-    ├── admin/           # index (org list), form (org add/edit + first-member section)
+    ├── admin/           # index (org list), form (org add/edit + first-member section), users (user list per org), reset_password
     ├── auth/
     ├── members/         # index, form, view
     ├── customers/       # index, form (type toggle JS), view
@@ -126,4 +126,5 @@ Use `current_user.can_delete` / `current_user.can_write` in routes and templates
 - OIB is validated with the ISO 7064 MOD 11,10 checksum algorithm (`app/validators.py`). Used on member OIB and company OIB fields.
 - Deactivating a member (`is_active = False`) requires both `end_date` and `end_reason` — enforced in `members/routes.py` via `_deactivation_errors()`.
 - First-member bootstrap on org creation uses `_first_member_errors()` in `admin/routes.py` (same pattern as `_deactivation_errors`); strips whitespace and appends per-field errors.
+- Super admin password reset (`/admin/organisations/<org_id>/users/<user_id>/reset-password`) verifies `user.member.organisation_id == org_id` before any write (IDOR guard); catches `ValueError` from `user.set_password()` and surfaces it as a field error.
 - Login is blocked if `user.is_active` is False **or** `user.member.is_active` is False.
