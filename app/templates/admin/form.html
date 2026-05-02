@@ -40,6 +40,84 @@
                         {{ form.is_active(class="form-check-input") }}
                         {{ form.is_active.label(class="form-check-label") }}
                     </div>
+
+                    {% if not org %}
+                    <hr>
+                    <div class="mb-3 form-check">
+                        {{ form.add_first_member(class="form-check-input", id="addFirstMember") }}
+                        {{ form.add_first_member.label(class="form-check-label fw-semibold") }}
+                    </div>
+                    <div class="{% if not form.add_first_member.data %}d-none{% endif %}" id="firstMemberSection">
+                        <p class="text-muted small">This member will be assigned the <strong>President</strong> role and can immediately log in to manage the organisation.</p>
+                        <div class="row g-3 mb-3">
+                            <div class="col-sm-6">
+                                {{ form.member_first_name.label(class="form-label") }}
+                                {{ form.member_first_name(class="form-control" + (" is-invalid" if form.member_first_name.errors else "")) }}
+                                {% for error in form.member_first_name.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-sm-6">
+                                {{ form.member_last_name.label(class="form-label") }}
+                                {{ form.member_last_name(class="form-control" + (" is-invalid" if form.member_last_name.errors else "")) }}
+                                {% for error in form.member_last_name.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            {{ form.member_oib.label(class="form-label") }}
+                            {{ form.member_oib(class="form-control" + (" is-invalid" if form.member_oib.errors else ""), maxlength=11) }}
+                            {% for error in form.member_oib.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.member_date_of_birth.label(class="form-label") }}
+                            {{ form.member_date_of_birth(class="form-control" + (" is-invalid" if form.member_date_of_birth.errors else "")) }}
+                            {% for error in form.member_date_of_birth.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.member_address.label(class="form-label") }}
+                            {{ form.member_address(class="form-control" + (" is-invalid" if form.member_address.errors else "")) }}
+                            {% for error in form.member_address.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.member_phone.label(class="form-label") }}
+                            {{ form.member_phone(class="form-control" + (" is-invalid" if form.member_phone.errors else "")) }}
+                            {% for error in form.member_phone.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.member_email.label(class="form-label") }}
+                            {{ form.member_email(class="form-control" + (" is-invalid" if form.member_email.errors else "")) }}
+                            {% for error in form.member_email.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <h6 class="mt-3">User Account</h6>
+                        <div class="mb-3">
+                            {{ form.user_login_email.label(class="form-label") }}
+                            {{ form.user_login_email(class="form-control" + (" is-invalid" if form.user_login_email.errors else "")) }}
+                            {% for error in form.user_login_email.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.user_password.label(class="form-label") }}
+                            {{ form.user_password(class="form-control" + (" is-invalid" if form.user_password.errors else "")) }}
+                            {% for error in form.user_password.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <div class="d-flex gap-2">
                         {{ form.submit(class="btn btn-primary") }}
                         <a href="{{ url_for('admin.index') }}" class="btn btn-outline-secondary">Cancel</a>
@@ -49,4 +127,17 @@
         </div>
     </div>
 </div>
+{% if not org %}
+<script>
+    (function () {
+        const cb = document.getElementById('addFirstMember');
+        const section = document.getElementById('firstMemberSection');
+        if (cb && section) {
+            cb.addEventListener('change', function () {
+                section.classList.toggle('d-none', !cb.checked);
+            });
+        }
+    })();
+</script>
+{% endif %}
 {% endblock %}

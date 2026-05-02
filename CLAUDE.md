@@ -12,6 +12,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
+# Activate virtual environment (Linux)
+source .venv/bin/activate
+
 # Activate virtual environment (Windows)
 .venv\Scripts\activate
 
@@ -22,8 +25,14 @@ python run.py
 flask db migrate -m "description"
 flask db upgrade
 
-# Seed first admin user
-flask create-user
+# Seed super-admin user
+flask create-user --super-admin ...
+
+# Seed a regular user + member in an existing org
+flask create-user --org-oib <oib> ...
+
+# Create a new organisation (CLI alternative to web UI)
+flask create-org --name "..." --oib "..."
 ```
 
 Set `FLASK_APP=run.py` if flask CLI commands don't find the app.
@@ -41,16 +50,19 @@ Copy `.env.example` to `.env` and fill in:
 ```
 app/
 ├── __init__.py          # create_app() factory
-├── cli.py               # flask create-user command
+├── cli.py               # flask create-user / create-org CLI commands
 ├── validators.py        # reusable WTForms validators (oib_validator — ISO 7064 MOD 11,10)
+├── audit.py             # log_action() — writes audit trail entries
+├── tenant.py            # _resolve_tenant() + require_tenant() — per-request tenant from session
 ├── models/
+│   ├── organisation.py  # Organisation — top-level tenant; all data is scoped to an org
 │   ├── member.py        # Member — NGO person record
 │   ├── user.py          # User + Role enum, password hashing, permission helpers
 │   ├── customer.py      # Customer (STI base), PersonCustomer, CompanyCustomer
 │   ├── invoice.py       # Invoice
 │   ├── invoice_item.py  # InvoiceItem
-│   ├── item.py          # Item — pre-defined catalog for invoice line items
-│   └── settings.py      # Settings — single-row org config; Settings.get() creates if missing
+│   └── item.py          # Item — pre-defined catalog for invoice line items
+├── admin/               # /admin — super-admin: org CRUD, tenant switching, first-member bootstrap
 ├── auth/                # /auth — login / logout
 ├── members/             # /members — member CRUD
 ├── customers/           # /customers — customer CRUD
@@ -60,6 +72,7 @@ app/
 ├── settings/            # /settings — org settings (admin only)
 └── templates/
     ├── base.html        # navbar: Members, Customers, Invoices, Items, Settings
+    ├── admin/           # index (org list), form (org add/edit + first-member section)
     ├── auth/
     ├── members/         # index, form, view
     ├── customers/       # index, form (type toggle JS), view
@@ -67,6 +80,18 @@ app/
     ├── items/           # index, form
     └── settings/        # edit
 ```
+
+## Multi-Tenancy
+
+The app is multi-tenant. Each **Organisation** is an isolated tenant. All Members, Customers, Invoices, and Items are scoped to an Organisation via `organisation_id` FK.
+
+Tenant resolution (`app/tenant.py`):
+- **Super admin** — no default tenant; must call `/admin/switch-tenant/<org_id>` to set `session['tenant_id']`.
+- **Regular users** — tenant is always `current_user.member.organisation`.
+- `g.tenant` is available in every request; all data queries filter by `g.tenant.id`.
+- `require_tenant()` aborts 403 if `g.tenant` is None.
+
+Super admin creates organisations at `/admin/organisations/add`. The form has an optional **"Add First Member"** section that bootstraps the org with a President user in a single atomic transaction. Validation for this section is handled by `_first_member_errors()` in `app/admin/routes.py`.
 
 ## Data Model
 
@@ -100,4 +125,5 @@ Use `current_user.can_delete` / `current_user.can_write` in routes and templates
 - Member `oib` and `email_address` are unique — checked in routes on add and edit.
 - OIB is validated with the ISO 7064 MOD 11,10 checksum algorithm (`app/validators.py`). Used on member OIB and company OIB fields.
 - Deactivating a member (`is_active = False`) requires both `end_date` and `end_reason` — enforced in `members/routes.py` via `_deactivation_errors()`.
+- First-member bootstrap on org creation uses `_first_member_errors()` in `admin/routes.py` (same pattern as `_deactivation_errors`); strips whitespace and appends per-field errors.
 - Login is blocked if `user.is_active` is False **or** `user.member.is_active` is False.
