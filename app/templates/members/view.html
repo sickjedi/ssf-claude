@@ -11,6 +11,9 @@
                 {% if current_user.can_write %}
                 <a href="{{ url_for('members.edit', member_id=member.id) }}" class="btn btn-primary">Edit</a>
                 {% endif %}
+                {% if member.user and current_user.can_delete %}
+                <a href="{{ url_for('members.reset_password', member_id=member.id) }}" class="btn btn-outline-warning">Reset Password</a>
+                {% endif %}
                 {% if current_user.can_delete %}
                 <form method="POST" action="{{ url_for('members.delete', member_id=member.id) }}"
                       onsubmit="return confirm('Delete ' + {{ member.full_name | tojson }} + '?')">
@@ -64,6 +67,21 @@
 
                     <dt class="col-sm-4">Member Since</dt>
                     <dd class="col-sm-8">{{ member.created_at.strftime('%d.%m.%Y') }}</dd>
+
+                    {% if member.user and current_user.can_delete %}
+                    <dt class="col-sm-4 mt-3">Login Email</dt>
+                    <dd class="col-sm-8 mt-3">{{ member.user.email }}</dd>
+                    <dt class="col-sm-4">Role</dt>
+                    <dd class="col-sm-8"><span class="badge bg-secondary">{{ member.user.role.label }}</span></dd>
+                    <dt class="col-sm-4">Account</dt>
+                    <dd class="col-sm-8">
+                        {% if member.user.is_active %}
+                        <span class="badge bg-success">Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </dd>
+                    {% endif %}
                 </dl>
             </div>
         </div>

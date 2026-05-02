@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from app import db
 from app.audit import log_action
 from app.members import bp
-from app.members.forms import MemberForm
+from app.members.forms import MemberForm, ResetPasswordForm
 from app.models.member import Member
 from app.models.user import User, Role
 from app.tenant import require_tenant
@@ -197,6 +197,34 @@ def edit(member_id):
         form.user_is_active.data = member.user.is_active
 
     return render_template('members/form.html', form=form, title='Edit Member', member=member)
+
+
+@bp.route('/<int:member_id>/reset-password', methods=['GET', 'POST'])
+@login_required
+def reset_password(member_id):
+    if not current_user.can_delete:
+        abort(403)
+    require_tenant()
+    member = db.session.get(Member, member_id)
+    if member is None or member.organisation_id != g.tenant.id:
+        abort(404)
+    if not member.user:
+        abort(404)
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        if form.new_password.data != form.confirm_password.data:
+            form.confirm_password.errors.append('Passwords do not match.')
+            return render_template('members/reset_password.html', form=form, member=member)
+        try:
+            member.user.set_password(form.new_password.data)
+        except ValueError as e:
+            form.new_password.errors.append(str(e))
+            return render_template('members/reset_password.html', form=form, member=member)
+        db.session.commit()
+        log_action('UPDATE', 'User', f'Reset password for {member.user.email} (ID: {member.user.id})')
+        flash(f'Password reset for {member.full_name}.', 'success')
+        return redirect(url_for('members.view', member_id=member.id))
+    return render_template('members/reset_password.html', form=form, member=member)
 
 
 @bp.route('/<int:member_id>/delete', methods=['POST'])

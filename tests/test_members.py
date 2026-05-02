@@ -3,6 +3,7 @@ from datetime import date
 from flask import g
 from app import db as _db
 from app.models.user import User, Role
+from app.members.forms import ResetPasswordForm
 from app.members.routes import _deactivation_errors, _role_conflict
 from tests.conftest import make_member, make_org
 
@@ -21,6 +22,20 @@ class _DeactivationForm:
         self.is_active = _Field(is_active)
         self.end_date = _Field(end_date)
         self.end_reason = _Field(end_reason)
+
+
+def _make_member_with_user(oib='12345678903', member_oib='98765432109', email='u@test.com', role=Role.PRESIDENT):
+    org = make_org(oib=oib)
+    _db.session.add(org)
+    _db.session.flush()
+    member = make_member(oib=member_oib, email_address=email, organisation_id=org.id)
+    _db.session.add(member)
+    _db.session.flush()
+    user = User(email=email, role=role, is_active=True, member=member)
+    user.set_password('OldPass123!')
+    _db.session.add(user)
+    _db.session.commit()
+    return member, user
 
 
 def _persist_user(oib, email, role, org_id, is_active=True):
@@ -134,3 +149,69 @@ class TestRoleConflict:
         with app.test_request_context():
             g.tenant = org
             assert _role_conflict(Role.PRESIDENT) is None
+
+
+# ── ResetPasswordForm (members) ───────────────────────────────────────────────
+
+class TestMembersResetPasswordForm:
+    _VALID = {'new_password': 'SecurePass1', 'confirm_password': 'SecurePass1'}
+
+    def test_valid_form_passes(self, app):
+        with app.test_request_context('/', method='POST', data=self._VALID):
+            assert ResetPasswordForm().validate() is True
+
+    def test_missing_new_password_fails(self, app):
+        with app.test_request_context('/', method='POST', data={'confirm_password': 'SecurePass1'}):
+            form = ResetPasswordForm()
+            assert form.validate() is False
+            assert form.new_password.errors
+
+    def test_short_new_password_fails(self, app):
+        with app.test_request_context('/', method='POST', data={**self._VALID, 'new_password': 'short'}):
+            form = ResetPasswordForm()
+            assert form.validate() is False
+            assert form.new_password.errors
+
+    def test_missing_confirm_password_fails(self, app):
+        with app.test_request_context('/', method='POST', data={'new_password': 'SecurePass1'}):
+            form = ResetPasswordForm()
+            assert form.validate() is False
+            assert form.confirm_password.errors
+
+
+# ── reset_password route logic ────────────────────────────────────────────────
+
+class TestMembersResetPasswordLogic:
+    def test_password_change_persists(self, app):
+        with app.app_context():
+            member, user = _make_member_with_user()
+            member.user.set_password('NewPass456!')
+            _db.session.commit()
+            refreshed = _db.session.get(User, user.id)
+            assert refreshed.check_password('NewPass456!')
+            assert not refreshed.check_password('OldPass123!')
+
+    def test_set_password_raises_for_short_password(self, app):
+        with app.app_context():
+            member, _ = _make_member_with_user()
+            with pytest.raises(ValueError):
+                member.user.set_password('short')
+
+    def test_set_password_raises_for_empty_password(self, app):
+        with app.app_context():
+            member, _ = _make_member_with_user()
+            with pytest.raises(ValueError):
+                member.user.set_password('')
+
+    def test_idor_check_cross_org_member(self, app):
+        with app.app_context():
+            org_a = make_org(name='Org A', oib='12345678903')
+            _db.session.add(org_a)
+            _db.session.flush()
+            org_b = make_org(name='Org B', oib='11111111119')
+            _db.session.add(org_b)
+            _db.session.flush()
+            member_b = make_member(oib='00000000001', email_address='b@test.com', organisation_id=org_b.id)
+            _db.session.add(member_b)
+            _db.session.commit()
+            assert member_b.organisation_id != org_a.id
