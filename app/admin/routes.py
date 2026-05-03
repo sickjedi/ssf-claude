@@ -2,7 +2,7 @@ from functools import wraps
 from flask import render_template, redirect, url_for, flash, abort, session
 from flask_login import login_required, current_user
 from sqlalchemy.orm import contains_eager
-from app import db
+from app import db, limiter
 from app.admin import bp
 from app.admin.forms import OrganisationAdminForm, ResetPasswordForm
 from app.audit import log_action
@@ -159,6 +159,7 @@ def org_users(org_id):
 @bp.route('/organisations/<int:org_id>/users/<int:user_id>/reset-password', methods=['GET', 'POST'])
 @login_required
 @super_admin_required
+@limiter.limit('10 per minute')
 def reset_user_password(org_id, user_id):
     org = db.session.get(Organisation, org_id) or abort(404)
     user = db.session.get(User, user_id) or abort(404)

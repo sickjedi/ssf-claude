@@ -1,6 +1,6 @@
 from flask import render_template, redirect, url_for, flash, abort, request, g
 from flask_login import login_required, current_user
-from app import db
+from app import db, limiter
 from app.audit import log_action
 from app.members import bp
 from app.members.forms import MemberForm, ResetPasswordForm
@@ -201,6 +201,7 @@ def edit(member_id):
 
 @bp.route('/<int:member_id>/reset-password', methods=['GET', 'POST'])
 @login_required
+@limiter.limit('10 per minute')
 def reset_password(member_id):
     if not current_user.can_delete:
         abort(403)
