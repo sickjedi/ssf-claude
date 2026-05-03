@@ -3,7 +3,7 @@ from datetime import date
 from flask import g
 from app import db as _db
 from app.models.user import User, Role
-from app.members.forms import ResetPasswordForm
+from app.members.forms import ResetPasswordForm, MemberForm
 from app.members.routes import _deactivation_errors, _role_conflict
 from tests.conftest import make_member, make_org
 
@@ -32,7 +32,7 @@ def _make_member_with_user(oib='12345678903', member_oib='98765432109', email='u
     _db.session.add(member)
     _db.session.flush()
     user = User(email=email, role=role, is_active=True, member=member)
-    user.set_password('OldPass123!')
+    user.set_password('OldP@ssword1')
     _db.session.add(user)
     _db.session.commit()
     return member, user
@@ -43,7 +43,7 @@ def _persist_user(oib, email, role, org_id, is_active=True):
     _db.session.add(m)
     _db.session.flush()
     u = User(email=email, role=role, is_active=is_active, member=m)
-    u.set_password('password123')
+    u.set_password('OldP@ssword1')
     _db.session.add(u)
     _db.session.commit()
     return u
@@ -154,14 +154,14 @@ class TestRoleConflict:
 # ── ResetPasswordForm (members) ───────────────────────────────────────────────
 
 class TestMembersResetPasswordForm:
-    _VALID = {'new_password': 'SecurePass1', 'confirm_password': 'SecurePass1'}
+    _VALID = {'new_password': 'SecureP@ss12', 'confirm_password': 'SecureP@ss12'}
 
     def test_valid_form_passes(self, app):
         with app.test_request_context('/', method='POST', data=self._VALID):
             assert ResetPasswordForm().validate() is True
 
     def test_missing_new_password_fails(self, app):
-        with app.test_request_context('/', method='POST', data={'confirm_password': 'SecurePass1'}):
+        with app.test_request_context('/', method='POST', data={'confirm_password': 'SecureP@ss12'}):
             form = ResetPasswordForm()
             assert form.validate() is False
             assert form.new_password.errors
@@ -173,10 +173,51 @@ class TestMembersResetPasswordForm:
             assert form.new_password.errors
 
     def test_missing_confirm_password_fails(self, app):
-        with app.test_request_context('/', method='POST', data={'new_password': 'SecurePass1'}):
+        with app.test_request_context('/', method='POST', data={'new_password': 'SecureP@ss12'}):
             form = ResetPasswordForm()
             assert form.validate() is False
             assert form.confirm_password.errors
+
+    def test_password_no_special_char_fails(self, app):
+        with app.test_request_context('/', method='POST', data={**self._VALID, 'new_password': 'SecurePass12'}):
+            form = ResetPasswordForm()
+            assert form.validate() is False
+            assert form.new_password.errors
+
+
+# ── MemberForm new_user_password field ───────────────────────────────────────
+
+class TestMemberFormNewUserPassword:
+    _VALID = {
+        'first_name': 'Test',
+        'last_name': 'User',
+        'oib': '12345678903',
+        'date_of_birth': '1990-01-01',
+        'address': 'Test Street 1',
+        'phone': '0911234567',
+        'email_address': 'test@example.com',
+        'gdpr': 'y',
+    }
+
+    def test_blank_optional_password_passes(self, app):
+        with app.test_request_context('/', method='POST', data={**self._VALID, 'new_user_password': ''}):
+            assert MemberForm().validate() is True
+
+    def test_too_short_password_fails(self, app):
+        with app.test_request_context('/', method='POST', data={**self._VALID, 'new_user_password': 'short'}):
+            form = MemberForm()
+            assert form.validate() is False
+            assert form.new_user_password.errors
+
+    def test_no_special_char_fails(self, app):
+        with app.test_request_context('/', method='POST', data={**self._VALID, 'new_user_password': 'SecurePass12'}):
+            form = MemberForm()
+            assert form.validate() is False
+            assert form.new_user_password.errors
+
+    def test_valid_password_passes(self, app):
+        with app.test_request_context('/', method='POST', data={**self._VALID, 'new_user_password': 'SecureP@ss12'}):
+            assert MemberForm().validate() is True
 
 
 # ── reset_password route logic ────────────────────────────────────────────────
@@ -185,11 +226,11 @@ class TestMembersResetPasswordLogic:
     def test_password_change_persists(self, app):
         with app.app_context():
             member, user = _make_member_with_user()
-            member.user.set_password('NewPass456!')
+            member.user.set_password('NewP@ssword2')
             _db.session.commit()
             refreshed = _db.session.get(User, user.id)
-            assert refreshed.check_password('NewPass456!')
-            assert not refreshed.check_password('OldPass123!')
+            assert refreshed.check_password('NewP@ssword2')
+            assert not refreshed.check_password('OldP@ssword1')
 
     def test_set_password_raises_for_short_password(self, app):
         with app.app_context():
@@ -202,6 +243,12 @@ class TestMembersResetPasswordLogic:
             member, _ = _make_member_with_user()
             with pytest.raises(ValueError):
                 member.user.set_password('')
+
+    def test_set_password_raises_for_missing_special_char(self, app):
+        with app.app_context():
+            member, _ = _make_member_with_user()
+            with pytest.raises(ValueError):
+                member.user.set_password('SecurePass12')
 
     def test_idor_check_cross_org_member(self, app):
         with app.app_context():

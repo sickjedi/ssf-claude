@@ -32,8 +32,10 @@ class User(UserMixin, db.Model):
     member = db.relationship('Member', back_populates='user')
 
     def set_password(self, password):
-        if not password or len(password) < 8:
-            raise ValueError('Password must be at least 8 characters.')
+        from app.validators import check_password_strength
+        error = check_password_strength(password)
+        if error:
+            raise ValueError(error)
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):

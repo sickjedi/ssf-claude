@@ -51,7 +51,7 @@ Copy `.env.example` to `.env` and fill in:
 app/
 ├── __init__.py          # create_app() factory
 ├── cli.py               # flask create-user / create-org CLI commands
-├── validators.py        # reusable WTForms validators (oib_validator — ISO 7064 MOD 11,10)
+├── validators.py        # reusable WTForms validators: oib_validator (ISO 7064 MOD 11,10), check_password_strength / password_validator
 ├── audit.py             # log_action() — writes audit trail entries
 ├── tenant.py            # _resolve_tenant() + require_tenant() — per-request tenant from session
 ├── models/
@@ -118,7 +118,7 @@ Use `current_user.can_delete` / `current_user.can_write` in routes and templates
 ## Conventions
 
 - Blueprint `__init__.py` imports `routes` at the bottom to avoid circular imports.
-- Passwords hashed with Werkzeug (`set_password` / `check_password` on `User`).
+- Passwords hashed with Werkzeug (`set_password` / `check_password` on `User`). Strength is enforced by `check_password_strength` in `app/validators.py` (min 12 chars, uppercase, lowercase, digit, special character); called from `User.set_password`, all password form fields, and the CLI. `set_password` raises `ValueError` on failure — routes catch it and surface it as a field error.
 - CSRF: global via `CSRFProtect`. WTForms forms use `{{ form.hidden_tag() }}`; manual POST forms use `<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">`.
 - Invoice items are submitted as `item_name[]`, `item_price[]`, `item_quantity[]` arrays and parsed manually in the route (not via WTForms FieldList).
 - Delete is blocked if protected relations exist (member with user account, customer with invoices).

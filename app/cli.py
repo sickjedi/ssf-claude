@@ -5,6 +5,7 @@ from app import db
 from app.models.member import Member
 from app.models.organisation import Organisation
 from app.models.user import User, Role
+from app.validators import check_password_strength
 
 
 @current_app.cli.command('create-org')
@@ -58,8 +59,9 @@ def create_user(super_admin, org_oib, first_name, last_name, member_oib,
         click.echo(f'Error: user {login_email} already exists.')
         return
 
-    if not password or len(password) < 8:
-        click.echo('Error: password must be at least 8 characters.')
+    error = check_password_strength(password)
+    if error:
+        click.echo(f'Error: {error}')
         return
 
     if super_admin:

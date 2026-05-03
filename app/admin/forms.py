@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, BooleanField, PasswordField, DateField, SubmitField
 from wtforms.validators import DataRequired, Optional, Length, Email
-from app.validators import oib_validator
+from app.validators import oib_validator, password_validator
 
 
 class OrganisationAdminForm(FlaskForm):
@@ -21,12 +21,12 @@ class OrganisationAdminForm(FlaskForm):
     member_phone = StringField('Phone', validators=[Optional(), Length(max=50)])
     member_email = StringField('Email', validators=[Optional(), Email(), Length(max=255)])
     user_login_email = StringField('Login Email', validators=[Optional(), Email(), Length(max=255)])
-    user_password = PasswordField('Password', validators=[Optional(), Length(min=8, max=128)])
+    user_password = PasswordField('Password', validators=[Optional(), Length(max=128), password_validator])
 
     submit = SubmitField('Save')
 
 
 class ResetPasswordForm(FlaskForm):
-    new_password = PasswordField('New Password', validators=[DataRequired(), Length(min=8, max=128)])
+    new_password = PasswordField('New Password', validators=[DataRequired(), Length(max=128), password_validator])
     confirm_password = PasswordField('Confirm Password', validators=[DataRequired()])
     submit = SubmitField('Reset Password')

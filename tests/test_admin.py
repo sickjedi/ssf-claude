@@ -3,7 +3,6 @@ from datetime import date
 from app import db as _db
 from app.admin.forms import OrganisationAdminForm, ResetPasswordForm
 from app.models.member import Member
-from app.models.organisation import Organisation
 from app.models.user import User, Role
 from app.admin.routes import _first_member_errors
 from tests.conftest import make_org, make_member
@@ -29,7 +28,7 @@ class _FirstMemberForm:
         self.member_phone = _Field(overrides.get('phone', '0911234567'))
         self.member_email = _Field(overrides.get('email', 'ana@example.com'))
         self.user_login_email = _Field(overrides.get('login_email', 'ana@example.com'))
-        self.user_password = _Field(overrides.get('password', 'Password1!'))
+        self.user_password = _Field(overrides.get('password', 'SecureP@ss12'))
 
 
 # ── OrganisationAdminForm field validators ────────────────────────────────────
@@ -66,6 +65,16 @@ class TestOrganisationAdminForm:
             form = OrganisationAdminForm()
             assert form.validate() is False
             assert form.user_password.errors
+
+    def test_user_password_no_special_char_fails(self, app):
+        with app.test_request_context('/', method='POST', data={**self._VALID, 'user_password': 'SecurePass12'}):
+            form = OrganisationAdminForm()
+            assert form.validate() is False
+            assert form.user_password.errors
+
+    def test_user_password_valid_strong_passes(self, app):
+        with app.test_request_context('/', method='POST', data={**self._VALID, 'user_password': 'SecureP@ss12'}):
+            assert OrganisationAdminForm().validate() is True
 
     def test_member_email_invalid_format_fails(self, app):
         with app.test_request_context('/', method='POST', data={**self._VALID, 'member_email': 'not-an-email'}):
@@ -192,7 +201,7 @@ class TestAddOrgWithFirstMember:
                 is_active=True,
                 member=member,
             )
-            user.set_password('Password1!')
+            user.set_password('SecureP@ss12')
             _db.session.add(user)
             _db.session.commit()
 
@@ -200,7 +209,7 @@ class TestAddOrgWithFirstMember:
             assert saved_user is not None
             assert saved_user.role == Role.PRESIDENT
             assert saved_user.member.organisation_id == org.id
-            assert saved_user.check_password('Password1!')
+            assert saved_user.check_password('SecureP@ss12')
 
     def test_duplicate_login_email_blocked(self, app):
         with app.app_context():
@@ -224,7 +233,7 @@ class TestAddOrgWithFirstMember:
             _db.session.flush()
 
             user = User(email='existing@example.com', role=Role.ADMIN, is_active=True, member=member)
-            user.set_password('Password1!')
+            user.set_password('SecureP@ss12')
             _db.session.add(user)
             _db.session.commit()
 
@@ -236,14 +245,14 @@ class TestAddOrgWithFirstMember:
 # ── ResetPasswordForm ─────────────────────────────────────────────────────────
 
 class TestResetPasswordForm:
-    _VALID = {'new_password': 'SecurePass1', 'confirm_password': 'SecurePass1'}
+    _VALID = {'new_password': 'SecureP@ss12', 'confirm_password': 'SecureP@ss12'}
 
     def test_valid_form_passes(self, app):
         with app.test_request_context('/', method='POST', data=self._VALID):
             assert ResetPasswordForm().validate() is True
 
     def test_missing_new_password_fails(self, app):
-        with app.test_request_context('/', method='POST', data={'confirm_password': 'SecurePass1'}):
+        with app.test_request_context('/', method='POST', data={'confirm_password': 'SecureP@ss12'}):
             form = ResetPasswordForm()
             assert form.validate() is False
             assert form.new_password.errors
@@ -255,10 +264,16 @@ class TestResetPasswordForm:
             assert form.new_password.errors
 
     def test_missing_confirm_password_fails(self, app):
-        with app.test_request_context('/', method='POST', data={'new_password': 'SecurePass1'}):
+        with app.test_request_context('/', method='POST', data={'new_password': 'SecureP@ss12'}):
             form = ResetPasswordForm()
             assert form.validate() is False
             assert form.confirm_password.errors
+
+    def test_password_no_special_char_fails(self, app):
+        with app.test_request_context('/', method='POST', data={**self._VALID, 'new_password': 'SecurePass12'}):
+            form = ResetPasswordForm()
+            assert form.validate() is False
+            assert form.new_password.errors
 
 
 # ── reset_user_password logic ─────────────────────────────────────────────────
@@ -271,7 +286,7 @@ def _make_org_with_user(oib='12345678903', member_oib='98765432109', email='u@te
     _db.session.add(member)
     _db.session.flush()
     user = User(email=email, role=role, is_active=True, member=member)
-    user.set_password('OldPass123!')
+    user.set_password('OldP@ssword1')
     _db.session.add(user)
     _db.session.commit()
     return org, user
@@ -281,11 +296,11 @@ class TestResetUserPasswordLogic:
     def test_password_change_persists(self, app):
         with app.app_context():
             _, user = _make_org_with_user()
-            user.set_password('NewPass456!')
+            user.set_password('NewP@ssword2')
             _db.session.commit()
             refreshed = _db.session.get(User, user.id)
-            assert refreshed.check_password('NewPass456!')
-            assert not refreshed.check_password('OldPass123!')
+            assert refreshed.check_password('NewP@ssword2')
+            assert not refreshed.check_password('OldP@ssword1')
 
     def test_set_password_raises_for_short_password(self, app):
         with app.app_context():
@@ -298,6 +313,12 @@ class TestResetUserPasswordLogic:
             _, user = _make_org_with_user()
             with pytest.raises(ValueError):
                 user.set_password('')
+
+    def test_set_password_raises_for_missing_special_char(self, app):
+        with app.app_context():
+            _, user = _make_org_with_user()
+            with pytest.raises(ValueError):
+                user.set_password('SecurePass12')
 
     def test_idor_check_detects_cross_org_user(self, app):
         with app.app_context():
