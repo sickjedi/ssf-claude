@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: ssf
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn run:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: FLASK_APP
+        value: run.py
+      - key: RATELIMIT_STORAGE_URI
+        value: memory://
