@@ -1,6 +1,7 @@
 from urllib.parse import urlparse, urljoin
 from flask import render_template, redirect, url_for, flash, request, session
 from flask_login import login_user, logout_user, login_required, current_user
+from app import limiter
 from app.audit import log_action
 from app.auth import bp
 from app.auth.forms import LoginForm
@@ -16,6 +17,7 @@ def _is_safe_redirect(target):
 
 
 @bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit('10 per minute; 30 per hour')
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('members.index'))

@@ -7,6 +7,9 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_talisman import Talisman
 from config import Config
 
 
@@ -45,6 +48,7 @@ db = SQLAlchemy()
 login_manager = LoginManager()
 migrate = Migrate()
 csrf = CSRFProtect()
+limiter = Limiter(key_func=get_remote_address, default_limits=[], storage_uri='memory://')
 
 
 def create_app(config_class=Config):
@@ -55,6 +59,21 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
     migrate.init_app(app, db)
     csrf.init_app(app)
+    limiter.init_app(app)
+    Talisman(
+        app,
+        force_https=False,          # handled by the reverse proxy
+        strict_transport_security=False,
+        content_security_policy={
+            'default-src': "'self'",
+            'script-src': ["'self'", 'cdn.jsdelivr.net'],
+            'style-src': ["'self'", 'cdn.jsdelivr.net', "'unsafe-inline'"],
+            'font-src': ["'self'", 'cdn.jsdelivr.net'],
+            'img-src': "'self'",
+        },
+        referrer_policy='strict-origin-when-cross-origin',
+        feature_policy={},
+    )
 
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'

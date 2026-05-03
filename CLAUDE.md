@@ -42,6 +42,7 @@ Set `FLASK_APP=run.py` if flask CLI commands don't find the app.
 Copy `.env.example` to `.env` and fill in:
 - `SECRET_KEY` — long random string
 - `DATABASE_URL` — `postgres://...` (config.py automatically rewrites to `postgresql://`)
+- `RATELIMIT_STORAGE_URI` — optional; defaults to `memory://` (single process). Set to `redis://...` for multi-process deployments.
 
 ## Architecture
 
