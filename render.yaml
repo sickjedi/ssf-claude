@@ -3,7 +3,7 @@ services:
     name: ssf
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn run:app --bind 0.0.0.0:$PORT
+    startCommand: flask db upgrade && flask seed-admin && gunicorn run:app --bind 0.0.0.0:$PORT
     envVars:
       - key: SECRET_KEY
         generateValue: true
@@ -13,3 +13,7 @@ services:
         value: run.py
       - key: RATELIMIT_STORAGE_URI
         value: memory://
+      - key: INIT_ADMIN_EMAIL
+        sync: false
+      - key: INIT_ADMIN_PASSWORD
+        sync: false

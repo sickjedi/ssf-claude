@@ -1,3 +1,4 @@
+import os
 import click
 from datetime import date
 from flask import current_app
@@ -6,6 +7,32 @@ from app.models.member import Member
 from app.models.organisation import Organisation
 from app.models.user import User, Role
 from app.validators import check_password_strength
+
+
+@current_app.cli.command('seed-admin')
+def seed_admin():
+    """Create a super-admin from INIT_ADMIN_EMAIL / INIT_ADMIN_PASSWORD env vars if none exists."""
+    if User.query.filter_by(role=Role.SUPER_ADMIN).first():
+        click.echo('Super-admin already exists, skipping.')
+        return
+
+    email = os.environ.get('INIT_ADMIN_EMAIL')
+    password = os.environ.get('INIT_ADMIN_PASSWORD')
+
+    if not email or not password:
+        click.echo('INIT_ADMIN_EMAIL and INIT_ADMIN_PASSWORD must be set. Skipping.')
+        return
+
+    error = check_password_strength(password)
+    if error:
+        click.echo(f'Error: INIT_ADMIN_PASSWORD is too weak — {error}')
+        raise SystemExit(1)
+
+    user = User(email=email.lower(), role=Role.SUPER_ADMIN)
+    user.set_password(password)
+    db.session.add(user)
+    db.session.commit()
+    click.echo(f'Created super-admin: {email}')
 
 
 @current_app.cli.command('create-org')
